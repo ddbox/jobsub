@@ -43,6 +43,7 @@ mkdir -p $RPM_BUILD_ROOT/scratch/app
 mkdir -p $RPM_BUILD_ROOT/scratch/data
 mkdir -p $RPM_BUILD_ROOT/scratch/proxies
 mkdir -p $RPM_BUILD_ROOT/scratch/uploads
+mkdir -p $RPM_BUILD_ROOT/scratch/dropbox
 cp ./server/conf/jobsub_api.conf $RPM_BUILD_ROOT/etc/httpd/conf.d
 
 
