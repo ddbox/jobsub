@@ -1,6 +1,6 @@
 #!/bin/sh 
 VERS=v0_1_2
-REV=''
+REV='_1'
 
 if [ "$1" ==  "" ]; then
 	echo "usage $0 target_machine"
@@ -15,10 +15,12 @@ scp db.jobsub_client.tar products@$1.fnal.gov:/fnal/ups/db
 ssh products@$1.fnal.gov "cd /fnal/ups/db;  tar xvf db.jobsub_client.tar; rm db.jobsub_client.tar; "
 rm  db.jobsub_client.tar
 cd -
-wget https://cdcvs.fnal.gov/redmine/attachments/download/15054/jobsub-client-v0.1.2.tar.gz
-tar xzvf jobsub-client-v0.1.2.tar.gz
-rm jobsub-client-v0.1.2.tar.gz
-mv jobsub/client jobsub/jobsub_client
+#wget https://cdcvs.fnal.gov/redmine/attachments/download/15054/jobsub-client-v0.1.2.tar.gz
+#tar xzvf jobsub-client-v0.1.2.tar.gz
+#rm jobsub-client-v0.1.2.tar.gz
+#mv jobsub/client jobsub/jobsub_client
+mkdir -p jobsub/jobsub_client
+cp ../client/* jobsub/jobsub_client
 cd jobsub
 tar cvf prd.jobsub_client.tar jobsub_client 
 
