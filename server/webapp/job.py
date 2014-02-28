@@ -38,13 +38,21 @@ condor_job_status = {
 
 
 def get_condor_queue(acctgroup, uid, convert=False):
+    """ Uses the Condor Python bindings to get information for scheduled jobs.
+        Returns a map of objects with the Cluster Id as the key
+    """
     schedd = condor.Schedd()
+    # Filter by user
     results = schedd.query('Owner =?= "%s"' % uid)
     all_jobs = dict()
     for classad in results:
+        # Split the Env data into a dictionary
         env = dict([x.split('=') for x in classad['Env'].split(';')])
+        # Filter by accounting group
         if env.get('EXPERIMENT') == acctgroup:
             key = classad['ClusterId']
+            # Converting from ClassAd object to dictionary is optional
+            # since sometime we are only seeking one value
             if convert is True:
                 classad = classad_to_dict(classad)
             all_jobs[key] = classad
@@ -52,6 +60,8 @@ def get_condor_queue(acctgroup, uid, convert=False):
 
 
 def classad_to_dict(classad):
+    """ Converts a ClassAd object to a dictionary. Used for serialization to JSON.
+    """
     job_dict = dict()
     for k, v in classad.items():
         job_dict[repr(k)] = repr(v)
@@ -59,6 +69,8 @@ def classad_to_dict(classad):
 
 
 def cleanup(zip_file, outfilename):
+    """ Hook function to cleanup sandbox files after request has been processed
+    """
     try:
         os.remove(outfilename)
     except:
@@ -72,23 +84,31 @@ def cleanup(zip_file, outfilename):
 
 
 class SandboxResource(object):
-
+    """ Download compressed output sandbox for a given job
+        API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/sandbox/
+    """
     def doGET(self, acctgroup, job_id, kwargs):
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         command_path_root = get_command_path_root()
         if job_id is not None:
+            # Get the job status to return with the sandbox
             job_status = None
+            # Get the queue of scheduled jobs
             all_jobs = get_condor_queue(acctgroup, uid)
+            # Find the ClassAd for the job id
             classad = all_jobs.get(math.trunc(float(job_id)))
             if classad is not None:
+                # Use the map to get a readable name for the job status value
                 job_status = condor_job_status.get(classad.get('JobStatus'))
             job_tokens = job_id.split('.')
+            # Disregard anything past the decimal point in job id
             if len(job_tokens) == 1 or (len(job_tokens) > 1 and job_tokens[-1].isdigit() is False):
                 job_id = '%s.0' % job_id
             zip_path = os.path.join(command_path_root, acctgroup, uid, job_id)
             if os.path.exists(zip_path):
                 # found the path, zip data and return
+                # If there is no job status then it was not found in the queue. Assume completed
                 if job_status is None:
                     job_status = 'Completed'
                 zip_file = os.path.join(command_path_root, acctgroup, uid, '%s.zip' % job_id)
@@ -96,12 +116,14 @@ class SandboxResource(object):
 
                 rc = {'job_status': job_status}
 
+                # Create the multipart response and return
                 with open(zip_file, 'rb') as fh:
                     fields = [('rc', rc)]
                     files = [('zip_file', zip_file, fh.read())]
                     outfilename = os.path.join(command_path_root, acctgroup, uid, '%s.encoded' % job_id)
                     with open(outfilename, 'wb') as outfile:
                         content_type = encode_multipart_formdata(fields, files, outfile)
+                    # attach a hook function to cleanup when the request is done
                     cherrypy.request.hooks.attach('on_end_request', cleanup, zip_file=zip_file, outfilename=outfilename)
                     return serve_file(outfilename, 'application/x-download')
 
@@ -164,12 +186,21 @@ class AccountJobsResource(object):
         self.sandbox = SandboxResource()
 
     def doGET(self, acctgroup, job_id):
+        """ Serves the following APIs:
+
+            Query a single job. Returns a JSON map of the ClassAd object that matches the job id
+            API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/
+
+            Query list of jobs. Returns a JSON map of all the ClassAd objects in the queue
+            API is /jobsub/acctgroups/<group_id>/jobs/
+        """
         subject_dn = cherrypy.request.headers.get('Auth-User')
         uid = get_uid(subject_dn)
         if job_id is not None:
             all_jobs = get_condor_queue(acctgroup, uid)
             classad = all_jobs.get(int(job_id))
             if classad is not None:
+                # Convert from ClassAd object to dict for JSON dump
                 job_dict = classad_to_dict(classad)
                 rc = {'out': job_dict}
             else:
@@ -183,6 +214,9 @@ class AccountJobsResource(object):
         return rc
 
     def doPOST(self, acctgroup, job_id, kwargs):
+        """ Create/Submit a new job. Returns the output from the jobsub tools.
+            API is /jobsub/acctgroups/<group_id>/jobs/<job_id>/
+        """
         if job_id is None:
             logger.log('kwargs: %s' % str(kwargs))
             jobsub_args = kwargs.get('jobsub_args_base64')
