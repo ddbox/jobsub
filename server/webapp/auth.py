@@ -175,7 +175,8 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
         x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s_%s'%(username,acctrole))
 
         # First create a keytab file for the user if it does not exists
-        if needs_refresh(keytab_fname,age_limit):
+        #if needs_refresh(keytab_fname,age_limit):
+	if False:
             logger.log('Using keytab %s to add principal %s ...' % (keytab_fname, principal))
             add_principal(principal, keytab_fname)
             logger.log('Using keytab %s to add principal %s ... DONE' % (keytab_fname, principal))
