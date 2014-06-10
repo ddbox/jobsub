@@ -70,9 +70,15 @@ class Krb5Ticket:
 
 def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     # First convert the krb5cc to regular x509 credentials
-    krb5cc_to_x509(krb5cc, x509_fname=proxy_fname)
+    creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
+    new_proxy_file = NamedTemporaryFile(prefix="%s_"%proxy_fname,delete=False)
+    new_proxy_fname=new_proxy_file.name
+    logger.log("new_proxy_fname=%s"%new_proxy_fname)
+    new_proxy_file.close()
+    krb5cc_to_x509(krb5cc, x509_fname=new_proxy_fname)
 
     voms_proxy_init_exe = spawn.find_executable("voms-proxy-init")
+    voms_proxy_info_exe = spawn.find_executable("voms-proxy-info")
     if not voms_proxy_init_exe:
         raise Exception("Unable to find command 'voms-proxy-init' in the PATH.")
 
@@ -82,7 +88,8 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
     if acctrole:
         voms_attrs = '%s/Role=%s' % (voms_attrs, acctrole)
     cmd = "%s -noregen -ignorewarn -valid 168:0 -bits 1024 -voms %s" % (voms_proxy_init_exe, voms_attrs)
-    cmd_env = {'X509_USER_PROXY': proxy_fname}
+    cmd_env = {'X509_USER_PROXY': new_proxy_fname}
+    logger.log(cmd)
     try:
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
     except:
@@ -96,6 +103,11 @@ def krb5cc_to_vomsproxy(krb5cc, proxy_fname, acctgroup, acctrole=None):
         else:
             # Anything else we should just raise
             raise
+    cmd = "%s -exists -file %s"%(voms_proxy_info_exe,new_proxy_fname)
+    logger.log(cmd)
+    ret_code = os.system(cmd)
+    if ret_code == 0:
+	os.rename(new_proxy_fname,proxy_fname)
 
 
 
@@ -108,7 +120,9 @@ def krb5cc_to_x509(krb5cc, x509_fname='/tmp/x509up_u%s'%os.getuid()):
 
     cmd = '%s -o %s' % (kx509_exe, x509_fname)
     cmd_env = {'KRB5CCNAME': krb5cc}
+    logger.log(cmd)
     klist_out, klist_err = subprocessSupport.iexe_cmd(cmd, child_env=cmd_env)
+
 
 
 def kadmin_password():
@@ -159,38 +173,51 @@ def authenticate(dn):
     return username[0]
 
 
-def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
+def x509_proxy_fname(username,acctgroup,acctrole=None):
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     creds_dir = os.path.join(creds_base_dir, acctgroup)
+    if not os.path.isdir(creds_dir):
+        os.makedirs(creds_dir, 0700)
     logger.log('Using credentials dir: %s' % creds_dir)
+    if acctrole:
+        x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s_%s'%(username,acctrole))
+    else:
+        x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s'%username)
+    logger.log('returning x509_proxy_name=%s'%x509_cache_fname)
+    return x509_cache_fname
+
+#for stress testing,add as second parameter to needs_refresh()
+# these times are in seconds, not hours so refresh every 24 seconds for daily
+#REFRESH_DAILY=24
+#REFRESH_EVERY_4_HOURS=4
+
+def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
+    creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     try:
         ##TODO:if real_cache_fname and keytab_fname are new enough
         ##we should skip this step and go directly to voms-proxy-init
         ##
         principal = '%s/batch/fifegrid@FNAL.GOV' % username
-        if not os.path.isdir(creds_dir):
-            os.makedirs(creds_dir, 0700)
         real_cache_fname = os.path.join(creds_base_dir, 'krb5cc_%s'%username)
         old_cache_fname = os.path.join(creds_base_dir, 'old_krb5cc_%s'%username)
-        new_cache_fname = os.path.join(creds_base_dir, 'new_krb5cc_%s'%username)
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
-        x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s_%s'%(username,acctrole))
+        new_keytab_fname = os.path.join(creds_base_dir, 'new_%s.keytab'%username)
+        x509_cache_fname = x509_proxy_fname(username,acctgroup,acctrole)
+
 
         if not is_valid_cache(real_cache_fname):
+            new_cache_file = NamedTemporaryFile(prefix="%s_"%real_cache_fname,delete=False)
+            new_cache_fname = new_cache_file.name
+            logger.log("new_cache_fname=%s"%new_cache_fname)
+	    new_cache_file.close()
             logger.log('Creating krb5 ticket ...')
             krb5_ticket = Krb5Ticket(keytab_fname, new_cache_fname, principal)
             krb5_ticket.create()
             logger.log('Creating krb5 ticket ... DONE')
 
             # Rename is atomic and silently overwrites destination
-            if os.path.exists(real_cache_fname):
-                os.rename(real_cache_fname, old_cache_fname)
-            os.rename(new_cache_fname, real_cache_fname)
-            try:
-                os.unlink(old_cache_fname)
-            except:
-                # Ignore file removal errors
-                pass
+            if os.path.exists(new_cache_fname):
+                 os.rename(new_cache_fname, real_cache_fname)
         ##TODO: maybe skip this too if x509_cache_fname is new enough?
         if needs_refresh(x509_cache_fname):
             krb5cc_to_vomsproxy(real_cache_fname, x509_cache_fname, acctgroup, acctrole)
@@ -212,7 +239,6 @@ def is_valid_cache(cache_name):
         logger.log("%s is expired,invalid, or does not exist"%cache_name)
         return False
 
-
 def create_voms_proxy(dn, acctgroup, role):
     logger.log('create_voms_proxy: Authenticating DN: %s' % dn)
     username = authenticate(dn)
@@ -228,7 +254,7 @@ def get_x509_proxy_file(username, acctgroup):
     return os.path.join(creds_dir, 'x509cc_%s'%username)
 
 def refresh_proxies(agelimit=3600):
-    cmd = 'condor_q -format "%s^" accountinggroup -format "%s^" x509userproxysubject -format "%s\n" owner '
+    cmd = 'condor_q -format "%s^" accountinggroup -format "%s^" x509userproxysubject -format "%s\n" x509userproxy '
     already_processed=['']
     queued_users=[]
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
@@ -245,9 +271,11 @@ def refresh_proxies(agelimit=3600):
                 grp,user=ac_grp.split(".")
                 if user not in queued_users:
                     queued_users.append(user)
-                grp=grp.strip("group_")
-                print "checking proxy %s %s %s"%(dn,user,grp)
-                authorize(dn,user,grp,'Analysis',agelimit)
+                grp=grp.replace("group_","")
+		proxy_name=os.path.basename(check[2])
+		x,uid,role=proxy_name.split('_')	
+                print "checking proxy %s %s %s %s"%(dn,user,grp,role)
+                authorize(dn,user,grp,role,agelimit)
     #todo: invalidate old proxies
     #one_day_ago=int(time.time())-86400
     #condor_history -format "%s^" accountinggroup \
