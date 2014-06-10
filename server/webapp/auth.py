@@ -27,6 +27,7 @@ import cherrypy
 import logger
 import subprocessSupport
 from util import needs_refresh
+from tempfile import NamedTemporaryFile
 from jobsub import get_voms
 
 class AuthenticationError(Exception):
@@ -61,6 +62,7 @@ class Krb5Ticket:
                                                       self.createLifetimeHours,
                                                       self.renewableLifetimeHours,
                                                       self.krb5cc, self.principal)
+        logger.log(cmd)
         kinit_out, kinit_err = subprocessSupport.iexe_cmd(cmd)
         if kinit_err:
             raise Exception("createKrbCache error: %s" % kinit_err)
