@@ -174,14 +174,7 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
         keytab_fname = os.path.join(creds_base_dir, '%s.keytab'%username)
         x509_cache_fname = os.path.join(creds_dir, 'x509cc_%s_%s'%(username,acctrole))
 
-        # First create a keytab file for the user if it does not exists
-        #if needs_refresh(keytab_fname,age_limit):
-	if False:
-            logger.log('Using keytab %s to add principal %s ...' % (keytab_fname, principal))
-            add_principal(principal, keytab_fname)
-            logger.log('Using keytab %s to add principal %s ... DONE' % (keytab_fname, principal))
-
-        if needs_refresh(real_cache_fname,age_limit):
+        if not is_valid_cache(real_cache_fname):
             logger.log('Creating krb5 ticket ...')
             krb5_ticket = Krb5Ticket(keytab_fname, new_cache_fname, principal)
             krb5_ticket.create()
@@ -197,13 +190,25 @@ def authorize(dn, username, acctgroup, acctrole='Analysis',age_limit=3600):
                 # Ignore file removal errors
                 pass
         ##TODO: maybe skip this too if x509_cache_fname is new enough?
-        if needs_refresh(x509_cache_fname,0):
+        if needs_refresh(x509_cache_fname):
             krb5cc_to_vomsproxy(real_cache_fname, x509_cache_fname, acctgroup, acctrole)
         return x509_cache_fname
     except:
         logger.log('EXCEPTION OCCURED IN AUTHORIZATION')
         logger.log(traceback.format_exc())
         raise AuthorizationError(dn, acctgroup)
+
+def is_valid_cache(cache_name):
+    klist_exe=spawn.find_executable("klist")
+    cmd ="%s -s -c %s"%(klist_exe,cache_name)
+    try:
+        logger.log(cmd)
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
+        logger.log("%s is still valid"%cache_name)
+        return True
+    except:
+        logger.log("%s is expired,invalid, or does not exist"%cache_name)
+        return False
 
 
 def create_voms_proxy(dn, acctgroup, role):
