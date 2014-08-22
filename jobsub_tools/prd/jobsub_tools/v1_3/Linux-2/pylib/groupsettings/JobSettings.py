@@ -170,7 +170,7 @@ class JobSettings(object):
                 self.settings['transfer_executable']=False
                 self.settings['transfer_input_files']=os.environ.get("TRANSFER_INPUT_FILES","")
                 self.settings['needs_appending']=True
-                self.settings['ifdh_cmd']='${TMP}/ifdh.sh'
+                self.settings['ifdh_cmd']='${JSB_TMP}/ifdh.sh'
 		self.settings['jobsub_max_log_size']=5000000
 
 		#for w in sorted(self.settings,key=self.settings.get,reverse=True):
@@ -502,6 +502,8 @@ class JobSettings(object):
 		f.write("set - \"\"\n")
 		f.write("\n")
 		f.write("# To prevent output files from being transferred back\n")
+		f.write("export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsb_tmp\n")
+                f.write("mkdir -p $JSB_TMP\n")
 		f.write("export _CONDOR_SCRATCH_DIR=$_CONDOR_SCRATCH_DIR/no_xfer\n")
 		f.write("export TMP=$_CONDOR_SCRATCH_DIR\n")
 		f.write("export TEMP=$_CONDOR_SCRATCH_DIR\n")
@@ -722,6 +724,8 @@ class JobSettings(object):
 		f.write("DEFN=$2\n")
 		f.write("PRJ_NAME=$3\n")
 		f.write("SAM_USER=$4\n")
+		f.write("export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsb_tmp\n")
+                f.write("mkdir -p $JSB_TMP\n")
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])
@@ -772,6 +776,8 @@ class JobSettings(object):
 		f.write("#!/bin/sh -x\n")
 		f.write("EXPERIMENT=$1\n")
 		f.write("PRJ_NAME=$2\n")
+		f.write("export JSB_TMP=$_CONDOR_SCRATCH_DIR/jsb_tmp\n")
+                f.write("mkdir -p $JSB_TMP\n")
                 ifdh_pgm_text=JobUtils().ifdhString()%(settings['ifdh_cmd'],settings['wn_ifdh_location'],settings['ifdh_cmd'])
                 f.write(ifdh_pgm_text)
 		f.write("""export IFDH_BASE_URI=%s\n"""%settings['ifdh_base_uri'])

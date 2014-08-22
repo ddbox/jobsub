@@ -41,7 +41,9 @@ if [ "$has_ifdh" -ne "0" ] ; then
      fi
    done
 fi
-ifdh "$@"
+if [ "$1" != "--jobsub-internal-setup" ]; then
+   ifdh "$@"
+fi
 _HEREDOC_
 chmod +x %s
             """	
