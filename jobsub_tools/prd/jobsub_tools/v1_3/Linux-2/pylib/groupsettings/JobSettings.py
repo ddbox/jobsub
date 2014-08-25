@@ -511,7 +511,7 @@ class JobSettings(object):
 		f.write("export OSG_WN_TMP=$TMPDIR\n")
 		f.write("mkdir -p $_CONDOR_SCRATCH_DIR\n")
 		f.write("""if [ "${JOBSUB_MAX_LOG_SIZE}" = "" ] ; then JOBSUB_MAX_LOG_SIZE=%s ; fi \n"""%settings['jobsub_max_log_size'])
-                f.write("""exec 7>&1; exec >${TMP}/JOBSUB_LOG_FILE; exec 8>&2; exec 2>${TMP}/JOBSUB_ERR_FILE\n""")
+                f.write("""exec 7>&1; exec >${JSB_TMP}/JOBSUB_LOG_FILE; exec 8>&2; exec 2>${JSB_TMP}/JOBSUB_ERR_FILE\n""")
 
 
 		f.write("\n")
@@ -582,7 +582,7 @@ class JobSettings(object):
 			
 		if settings['joblogfile'] != "":
 			f.write("%s cp  $_CONDOR_SCRATCH_DIR/tmp_job_log_file %s\n"%(ifdh_cmd,settings['joblogfile']))
-                f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; tail -c ${JOBSUB_MAX_LOG_SIZE} ${TMP}/JOBSUB_ERR_FILE 1>&2 ; tail -c ${JOBSUB_MAX_LOG_SIZE} ${TMP}/JOBSUB_LOG_FILE \n""") 
+                f.write("""exec 1>&7 7>&- ; exec 2>&8 8>&- ; tail -c ${JOBSUB_MAX_LOG_SIZE} ${JSB_TMP}/JOBSUB_ERR_FILE 1>&2 ; tail -c ${JOBSUB_MAX_LOG_SIZE} ${JSB_TMP}/JOBSUB_LOG_FILE \n""") 
 
 		f.write("exit $JOB_RET_STATUS\n")
 		f.close
