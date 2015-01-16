@@ -17,7 +17,6 @@ import os
 import re
 import base64
 import pycurl
-import urllib
 import cStringIO
 import platform
 import json
@@ -27,13 +26,11 @@ import pprint
 import constants
 import jobsubClientCredentials
 import logSupport
-import subprocess 
 import hashlib
 import tempfile
 import tarfile
 import socket
 import time
-from distutils import spawn
 
 
 def version_string():
@@ -119,12 +116,13 @@ class JobSubClient:
                     #print "dropbox_uri is %s"%dropbox_uri
                     tarball=uri2path(dropbox_uri)
                     contents=tarfile.open(tarball,'r').getnames()
-                    if self.jobExe in contents:
+                    if self.jobExe in contents or os.path.basename(self.jobExe) in contents:
                         exeInTarball=True
                     else:
                         for arg in self.serverArgv:
-                            if arg in contents:
+                            if arg in contents or os.path.basename(arg) in contents:
                                 exeInTarball=True    
+                                break
                     if exeInTarball:
                         pass
                     else:
@@ -136,7 +134,7 @@ class JobSubClient:
 
 
             if self.jobDropboxURIMap:
-		tfiles=[]
+                tfiles=[]
                 # upload the files
                 result = self.dropbox_upload()
                 # replace uri with path on server
@@ -153,14 +151,14 @@ class JobSubClient:
                                 else:
                                     url = values.get('url')
                                     srv_argv[idx] = '%s%s' % (self.dropboxServer, url)
-				tfiles.append(srv_argv[idx])
+                                tfiles.append(srv_argv[idx])
                             else:
                                 print "Dropbox upload failed with error:"
                                 print json.dumps(result)
                                 raise JobSubClientSubmissionError
-		if len(tfiles)>0:
-			transfer_input_files=','.join(tfiles)
-			self.serverEnvExports="export TRANSFER_INPUT_FILES=%s;%s"%(transfer_input_files,self.serverEnvExports)
+                    if len(tfiles)>0:
+                        transfer_input_files=','.join(tfiles)
+                        self.serverEnvExports="export TRANSFER_INPUT_FILES=%s;%s"%(transfer_input_files,self.serverEnvExports)
                         if self.dropboxServer is None and self.server != actual_server:
                             self.server=actual_server
 
@@ -176,7 +174,10 @@ class JobSubClient:
             self.serverArgs_b64en = base64.urlsafe_b64encode(' '.join(srv_argv))
         # Submit URL: Depends on the VOMS Role
         if self.acctRole:
-            self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
+            if self.useDag:
+                self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
+            else:
+                self.submitURL = constants.JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE % (self.server, self.acctGroup, self.acctRole)
         elif self.useDag:
             self.submitURL = constants.JOBSUB_DAG_SUBMIT_URL_PATTERN % (self.server, self.acctGroup)
         else:
@@ -740,9 +741,8 @@ def get_client_credentials():
     5. Report failure
     """
 
-    creds = {}
-    env_cert = cert = None
-    env_key = key = None
+    env_cert = None
+    env_key = None
     cred_dict={}
     if os.environ.get('X509_USER_PROXY'):
         env_cert = os.environ.get('X509_USER_PROXY')
@@ -802,14 +802,25 @@ def is_uri_supported(uri):
 
 def get_server_env_exports(argv):
     # Any option -e should be extracted from the client and exported to the
+    # also --environment and --environment=
     # server appropriately.
     env_vars = []
     exports = ''
     i = 0
     while(i < len(argv)):
-        if argv[i] in constants.JOBSUB_SERVER_OPT_ENV:
-            i += 1
-            env_vars.append(argv[i])
+        idx=argv[i].find('=')
+        if idx>=0:
+            arg=argv[i][:idx]
+            val=argv[i][idx+1:]
+        else:
+            arg=argv[i]
+            val=None
+        
+        if arg in constants.JOBSUB_SERVER_OPT_ENV:
+            if val is None: 
+                i += 1
+                val=argv[i]
+            env_vars.append(val)
         i += 1
 
     for var in env_vars:
@@ -827,7 +838,6 @@ def get_jobexe_idx(argv):
     # files to upload
 
     i = 0
-    exe_idx = None
 
     while(i < len(argv)):
         if argv[i] in constants.JOBSUB_SERVER_OPTS_WITH_URI:
@@ -854,13 +864,13 @@ def get_dropbox_uri(argv):
     dropbox_idx = get_dropbox_idx(argv)
     dropbox_uri = None
     if dropbox_idx is not None:
-       dropbox_uri = argv[dropbox_idx]
-       if dropbox_uri.find('=')>0:
-           parts=dropbox_uri.split('=')
-           for part in parts:
-               if part.find(constants.DROPBOX_SUPPORTED_URI)>=0:
-                   dropbox_uri=part.strip()
-                   return dropbox_uri
+        dropbox_uri = argv[dropbox_idx]
+        if dropbox_uri.find('=')>0:
+            parts=dropbox_uri.split('=')
+            for part in parts:
+                if part.find(constants.DROPBOX_SUPPORTED_URI)>=0:
+                    dropbox_uri=part.strip()
+                    return dropbox_uri
     return dropbox_uri
 
 def get_jobexe_uri(argv):
@@ -878,11 +888,9 @@ def uri2path(uri):
 def get_dropbox_uri_map(argv):
     # make a map with keys of file path and value of sequence
     map = dict()
-    idx = 0
     for arg in argv:
         if arg.find(constants.DROPBOX_SUPPORTED_URI)>=0:
             map[arg] = digest_for_file(uri2path(arg))
-            idx += 1
     return map
 
 

@@ -37,6 +37,7 @@ JOBSUB_DAG_SUBMIT_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/dag/'
 JOBSUB_DAG_HELP_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/dag/help/'
 #JOBSUB_JOB_SUBMIT_URL_PATTERN = '%s/jobsub/acctgroups/%s/jobs/'
 JOBSUB_JOB_SUBMIT_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/'
+JOBSUB_DAG_SUBMIT_URL_PATTERN_WITH_ROLE = '%s/jobsub/acctgroups/%s--ROLE--%s/jobs/dag/'
 
 JOBSUB_Q_NO_GROUP_URL_PATTERN = '%s/jobsub/jobs/'
 JOBSUB_Q_USERID_URL_PATTERN = '%s/jobsub/users/%s/jobs/'
@@ -108,7 +109,7 @@ DROPBOX_SUPPORTED_URI = 'dropbox://'
 
 JOBSUB_SERVER_OPTS_WITH_URI = ('-f',)
 
-JOBSUB_SERVER_OPT_ENV = ('-e',)
+JOBSUB_SERVER_OPT_ENV = ('-e','--environment',)
 
 ################################################################################
 # KRB5 Constants
