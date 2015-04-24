@@ -6,7 +6,6 @@ import subprocessSupport
 
 from cherrypy.lib.static import serve_file
 
-from util import create_zipfile, create_tarfile
 from auth import check_auth
 from jobsub import is_supported_accountinggroup, get_command_path_root
 from jobsub import JobsubConfig
@@ -45,15 +44,34 @@ def cleanup(zip_file, outfilename=None):
         logger.log(err)
 
 
-def make_sandbox_readable(workdir, username):
-    cmd = [
-        'chmod',
-        '-R',
-        '+r',
-        os.path.realpath(workdir)
-    ]
+def make_writable(archive_file, username):
+    cmd = [ 'chmod', '777', os.path.realpath(archive_file) ]
 
     out, err = run_cmd_as_user(cmd, username, child_env=os.environ.copy())
+    if err:
+        logger.log(err)
+
+#moved these out of util.py as including jobsub::run_cmd_as_user caused
+#some circular dependency that cherrypy didn't like
+#
+def create_zipfile(zip_file, zip_path, job_id=None):
+    base = os.path.basename(zip_path)
+    dir = os.path.dirname(zip_path)
+    os.chdir(dir)
+    logger.log('creating zip of %s' % zip_path)
+    cmd = [ 'zip' , '-r', zip_file, base ]
+    out, err = run_cmd_as_user(cmd, cherrypy.request.username, child_env=os.environ.copy())
+    if err:
+        logger.log(err)
+
+def create_tarfile(tar_file, tar_path, job_id=None):
+    os.chdir(tar_path)
+    logger.log('creating tar of %s' % tar_path)
+    cmd = ['tar', 'cvzf', tar_file , '.' ]
+    out, err = run_cmd_as_user(cmd, cherrypy.request.username, child_env=os.environ.copy())
+    if err:
+        logger.log(err)
+
 
 
 def create_archive(zip_file, zip_path, job_id, format):
@@ -97,25 +115,25 @@ class SandboxResource(object):
         cherrypy.response.timeout = timeout
         logger.log('sandbox timeout=%s' % cherrypy.response.timeout)
         jobsubConfig = JobsubConfig()
-        sbx_create_dir = jobsubConfig.commandPathAcctgroup(acctgroup)
+        sbx_create_dir = jobsubConfig.downloadsDir
         sbx_final_dir = jobsubConfig.commandPathUser(acctgroup, cherrypy.request.username)
 
         command_path_root = get_command_path_root()
+        
+
         if job_id is None:
              job_id='I_am_planning_on_failing'
-        #zip_path = os.path.join(sbx_final_dir, job_id)
         zip_path = self.findSandbox(os.path.join(sbx_final_dir, job_id))
         if zip_path:
             ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
             format = kwargs.get('archive_format', 'tgz')
             logger.log('archive_format:%s'%format)
-            zip_file_tmp = None
             if format not in ('zip', 'tgz'):
                 format = 'tgz'
 
             # Moving the file to user dir and changing the ownership
             # prevents cherrypy from doing the cleanup. Keep the files in
-            # in acctgroup area to allow for cleanup
+            # in downloads area to allow for cleanup
             zip_file = os.path.join(sbx_create_dir,
                                         '%s.%s.%s' % (job_id, ts, format))
             rc = {'out': zip_file}
@@ -125,8 +143,8 @@ class SandboxResource(object):
             cherrypy.request.hooks.attach('after_error_response', cleanup,
                                           zip_file=zip_file)
 
-            make_sandbox_readable(zip_path, cherrypy.request.username)
             create_archive(zip_file, zip_path, job_id, format)
+            make_writable(zip_file, cherrypy.request.username)
             logger.log('returning %s'%zip_file)
             return serve_file(zip_file, 'application/x-download','attachment')
 

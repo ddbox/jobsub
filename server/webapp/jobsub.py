@@ -187,6 +187,7 @@ class JobsubConfig:
         self.stateDir = os.environ.get('JOBSUB_STATE_DIR', '/var/lib/jobsub')
 
         self.tmpDir = os.path.join(self.stateDir, 'tmp')
+        self.downloadsDir = os.path.join(self.tmpDir, 'downloads')
         self.credsDir = os.path.join(self.stateDir, 'creds')
 
         self.keytabsDir = os.path.join(self.credsDir, 'keytabs')
@@ -206,6 +207,7 @@ class JobsubConfig:
             (self.proxiesDir, '0755'),
             (self.krb5ccDir, '0755'),
             (self.tmpDir, '1777'),
+            (self.downloadsDir, '1777'),
         ]
         return layout
 
