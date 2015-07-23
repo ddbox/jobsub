@@ -68,13 +68,6 @@ def parse_opts(argv):
                          default=defaultServer(),
                          help='Alternate location of JobSub server to use')
 
-    opt_group.add_option('--role',
-                         dest='acctRole',
-                         type='string',
-                         action='store',
-                         metavar='<VOMS Role>',
-                         default=None,
-                         help='VOMS Role for priorities and accounting')
 
     opt_group.add_option('--user',
                          dest='uid',
