@@ -1,3 +1,8 @@
+# file: server.pp
+# can be installed with puppet apply --debug --no-daemonize server.pp
+# installs a jobsub server (nearly)
+# author Dennis Box, dbox@fnal.gov
+#
 $jobsub_server_version = '1.2-3'
 $jobsub_tools_version = 'v1_4_5'
 $jobsub_user = 'rexbatch'
