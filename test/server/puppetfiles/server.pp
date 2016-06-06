@@ -3,6 +3,7 @@
 # installs a jobsub server (nearly)
 # author Dennis Box, dbox@fnal.gov
 #
+
 $jobsub_server_version = '1.2-3'
 $jobsub_tools_version = 'v1_4_5'
 $jobsub_user = 'rexbatch'
@@ -24,7 +25,6 @@ yumrepo { "jenkins":
    gpgcheck => 1,
    gpgkey   => "http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key",
 }
-
 yumrepo { "jobsub":
    baseurl  => "http://web1.fnal.gov/files/jobsub/dev/6/x86_64/",
    descr    => "Jobsub",
@@ -37,7 +37,6 @@ vcsrepo { "${jobsub_git_dir}" :
   ensure => latest,
   source  => 'http://cdcvs.fnal.gov/projects/jobsub',
   revision => "${jobsub_git_branch}",
-  force => true,
 }
 
 package { 'epel-release-6':
@@ -54,7 +53,11 @@ package { 'osg-release-3.3-5.osg33.el6.noarch':
 
 
 package {'git': ensure => present}
-package { 'httpd': ensure => present }
+package { 'httpd': ensure => present}
+package {'java-1.8.0-openjdk': ensure =>present}
+package { 'jenkins': 
+    ensure => present,
+}
 package { 'upsupdbootstrap-fnal': ensure => present }
 
 package { 'llrun':
@@ -95,42 +98,44 @@ package { 'osg-ca-scripts':
 exec { 'setupCA':
   command => "/usr/sbin/osg-ca-manage setupCA --location root --url osg",
   require => [ Package['osg-ca-scripts'] ],
-  unless => "/usr/bin/test -e /etc/grid-security/certificates/FNAL-SLCS.pem",
+  creates => "/etc/grid-security/certificates/FNAL-SLCS.pem",
 }
 
 exec { 'makebasedir':
   command => "/bin/mkdir -p ${jobsub_basejobsdir}",
-  unless => "/usr/bin/test -e ${jobsub_basejobsdir}",
+  creates => "${jobsub_basejobsdir}",
 }
 
-#exec { 'gitclone':
-#  command => "/usr/bin/git clone http://cdcvs.fnal.gov/projects/jobsub ${jobsub_git_dir}",
-#  creates => "${jobsub_git_dir}",
-#} 
-#exec { 'gitpull':
-#  command => [ "cd ${jobsub_git_dir}","/usr/bin/git checkout master","/usr/bin/git pull ","/usr/bin/git checkout ${jobsub_git_branch}","/usr/bin/git pull",],
-#  onlyif => "/usr/bin/test -d ${jobsub_git_dir}",
-#} 
+exec { '/etc/grid-security/jobsub':
+  command => "/bin/mkdir -p /etc/grid-security/jobsub",
+  creates => "/etc/grid-security/jobsub",
+}
 
-#file {"/etc/grid-security/jobsub/${jobsub_ha_servicename}-hostcert.pem" :
-#    owner  => $jobsub_user,
-#    group  => $jobsub_group,
-#    mode   => '755',
-#    require   => Exec['jobsub_hostcert'],
-#  }
+file {"/etc/grid-security/jobsub/${jobsub_ha_servicename}-hostcert.pem" :
+    owner  => $jobsub_user,
+    group  => $jobsub_group,
+    mode   => '755',
+    require   => Exec['jobsub_hostcert'],
+}
 
 
-#exec { 'jobsub_hostcert':
-#  command => "cp /etc/grid-security/hostcert.pem /etc/grid-security/jobsub/${jobsub_ha_servicename}-hostcert.pem",
-#  require => File['/etc/grid-security/jobsub'],
-#  unless => "/usr/bin/test -e /etc/grid-security/jobsub/${jobsub_ha_servicename}-hostcert.pem",
-#} 
+exec { 'jobsub_hostcert':
+  command => "/bin/cp /etc/grid-security/hostcert.pem /etc/grid-security/jobsub/${jobsub_ha_servicename}-hostcert.pem",
+  require => Exec['/etc/grid-security/jobsub'],
+  creates => "/etc/grid-security/jobsub/${jobsub_ha_servicename}-hostcert.pem",
+} 
 
-#exec { 'jobsub_hostkey':
-#  command => "cp /etc/grid-security/hostkey.pem /etc/grid-security/jobsub/${jobsub_ha_servicename}-hostkey.pem",
-#  require => File['/etc/grid-security/jobsub'],
-#  unless => "/usr/bin/test -e /etc/grid-security/jobsub/${jobsub_ha_servicename}-hostkey.pem",
-#} 
+file {"/etc/grid-security/jobsub/${jobsub_ha_servicename}-hostkey.pem" :
+    owner  => $jobsub_user,
+    group  => $jobsub_group,
+    mode   => '700',
+    require   => Exec['jobsub_hostkey'],
+}
+exec { 'jobsub_hostkey':
+  command => "/bin/cp /etc/grid-security/hostkey.pem /etc/grid-security/jobsub/${jobsub_ha_servicename}-hostkey.pem",
+  require => Exec['/etc/grid-security/jobsub'],
+  creates  => "/etc/grid-security/jobsub/${jobsub_ha_servicename}-hostkey.pem",
+} 
 
 exec { 'install_jobsub_tools':
   command => "/bin/su products -c \" . /fnal/ups/etc/setups.sh; setup ups; setup upd; upd install jobsub_tools ${jobsub_tools_version} -f Linux+2; ups declare -c jobsub_tools ${jobsub_tools_version} -f Linux+2 \"  ",
@@ -238,17 +243,6 @@ user { $jobsub_user:
     group  => $jobsub_group,
     mode   => '775'
   }
-  # Setup logrotation
-#  file { '/etc/logrotate.d/jobsub':
-#    ensure  => file,
-#    mode    => '644',
-#    source  => 'puppet:///modules/jobsub/etc/logrotate.d/jobsub',
-#  }
-#  file { '/etc/logrotate.d/httpd':
-#    ensure  => file,
-#    mode    => '644',
-#    source  => 'puppet:///modules/jobsub/etc/logrotate.d/httpd',
-#  }
   file { 'jobsublogsdir':
     name   => $jobsub_logsbasedir,
     ensure => directory,
@@ -289,57 +283,50 @@ user { $jobsub_user:
     target   => '/opt/jobsub/server/conf/jobsub_api.conf',
     require  => [ Package['jobsub']],
   }
-#  file { '/opt/jobsub/server/conf/jobsub.ini':
-#    ensure  => file,
-#    owner   => $jobsub_user,
-#    group   => $jobsub_group,
-#    mode    => '644',
-#    content => template("/var/tmp/jobsub/test/server/puppetfiles/jobsub.ini.erb"),
-#  }
-#  file { '/var/www/html/cigetcertopts.txt':
-#    ensure  => file,
-#    owner   => $jobsub_user,
-#    group   => $jobsub_group,
-#    mode    => '644',
-#    content => template("/var/tmp/jobsub/test/server/puppetfiles/cigetcertopts.txt.erb")
-#  }
-#  file { '/etc/httpd/conf.d/ssl.conf':
-#    ensure  => file,
-#    owner   => $jobsub_user,
-#    group   => $jobsub_group,
-#    mode    => '644',
-#    content => template("/var/tmp/jobsub/test/server/puppetfiles/ssl.conf.erb")
-#  }
-#  file { '/opt/jobsub/server/conf/jobsub_api.conf':
-#    ensure  => file,
-#    owner   => $jobsub_user,
-#    group   => $jobsub_group,
-#    mode    => '644',
-#    require => File[$jobsub_git_dir],
-#    content => template("/var/tmp/jobsub/test/server/puppetfiles/jobsub_api.conf.erb")
-#  }
+  file { '/opt/jobsub/server/conf/jobsub.ini':
+    ensure  => file,
+    owner   => $jobsub_user,
+    group   => $jobsub_group,
+    mode    => '644',
+    require => Vcsrepo["${jobsub_git_dir}"],
+    content => template("/var/tmp/jobsub/test/server/puppetfiles/jobsub.ini.erb"),
+  }
+  file { '/var/www/html/cigetcertopts.txt':
+    ensure  => file,
+    owner   => $jobsub_user,
+    group   => $jobsub_group,
+    mode    => '644',
+    require => Vcsrepo["${jobsub_git_dir}"],
+    content => template("/var/tmp/jobsub/test/server/puppetfiles/cigetcertopts.txt.erb"),
+  }
+  file { '/etc/httpd/conf.d/ssl.conf':
+    ensure  => file,
+    owner   => $jobsub_user,
+    group   => $jobsub_group,
+    mode    => '644',
+    require => Vcsrepo["${jobsub_git_dir}"],
+    content => template("/var/tmp/jobsub/test/server/puppetfiles/ssl.conf.erb"),
+  }
+  file { '/opt/jobsub/server/conf/jobsub_api.conf':
+    ensure  => file,
+    owner   => $jobsub_user,
+    group   => $jobsub_group,
+    mode    => '644',
+    require => Vcsrepo["${jobsub_git_dir}"],
+    content => template("/var/tmp/jobsub/test/server/puppetfiles/jobsub_api.conf.erb"),
+  }
+  file { '/etc/lcmaps.db':
+    ensure  => file,
+    mode    => '644',
+    require => Vcsrepo["${jobsub_git_dir}"],
+    content => template("/var/tmp/jobsub/test/server/puppetfiles/lcmaps.db.erb")
+  }
   file {'/etc/grid-security/jobsub':
     ensure => directory,
     owner  => $jobsub_user,
     group  => $jobsub_group,
     mode   => '755'
   }
-#  file {'fifebatch-hacert.pem':
-#    path   => "/etc/grid-security/jobsub/${jobsub_ha_servicename}-hostcert.pem",
-#    ensure => file,
-#    owner  => $jobsub_user,
-#    group  => $jobsub_group,
-#    mode   => '644',
-#    source => "puppet:///modules/jobsub/etc/grid-security/jobsub/${jobsub_ha_servicename}-hostcert.pem"
-#  }
-#  file {'fifebatch-hakey.pem':
-#    path   => "/etc/grid-security/jobsub/${jobsub_ha_servicename}-hostkey.pem",
-#    ensure => file,
-#    owner  => $jobsub_user,
-#    group  => $jobsub_group,
-#    mode   => '400',
-#    source => "puppet:///modules/jobsub/etc/grid-security/jobsub/${jobsub_ha_servicename}-hostkey.pem"
-#  }
   file { '/opt/jobsub/server/admin/krbrefresh.sh':
     ensure  => present,
     owner   => $jobsub_user,
@@ -361,18 +348,26 @@ user { $jobsub_user:
     target   => '/etc/lcmaps.db',
     require  => Package['lcmaps-plugins-gums-client']
   }
-#  file { '/etc/lcmaps.db':
-#    ensure  => file,
-#    mode    => '644',
-#    content => template("/var/tmp/jobsub/etc/lcmaps.db.erb")
-#  }
-#  service{'httpd':
-#    ensure     => true,
-#    enable     => true,
-#    hasstatus  => true,
-#    hasrestart => true,
-#    subscribe  => File["/etc/grid-security/jobsub/${jobsub_ha_servicename}-hostcert.pem", "/etc/grid-security/jobsub/${jobsub_ha_servicename}-hostkey.pem", '/opt/jobsub/server/conf/jobsub_api.conf', '/opt/jobsub/server/conf/jobsub.ini']
-#  }
+  service{'httpd':
+    ensure     => true,
+    enable     => true,
+    hasstatus  => true,
+    hasrestart => true,
+    subscribe  => File["/etc/grid-security/jobsub/${jobsub_ha_servicename}-hostcert.pem", "/etc/grid-security/jobsub/${jobsub_ha_servicename}-hostkey.pem", '/opt/jobsub/server/conf/jobsub_api.conf', '/opt/jobsub/server/conf/jobsub.ini']
+  }
+  service{'condor':
+    ensure     => true,
+    enable     => true,
+    hasstatus  => true,
+    hasrestart => true,
+  }
+  service{'jenkins':
+    ensure     => true,
+    enable     => true,
+    hasstatus  => true,
+    hasrestart => true,
+  }
+
   cron {'Refresh the kerberos proxies of users in queue that have kerberos principal older than 3600 seconds (default)':
     ensure  => present,
     command => '/opt/jobsub/server/admin/krbrefresh.sh --refresh-proxies 10800',
@@ -415,4 +410,3 @@ user { $jobsub_user:
     hour    => '10',
     minute  => '54',
   }
-
