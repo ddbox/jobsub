@@ -58,7 +58,7 @@ class jobsub_server::packages {
      }
      
      package { 'jobsub':
-       ensure          => $jobsub_server_version,
+       ensure          => $jobsub_server::vars::jobsub_server_version,
        install_options => "--enablerepo=jobsub",
      }
      
@@ -67,9 +67,9 @@ class jobsub_server::packages {
        install_options => "--enablerepo=osg",
      }
      exec { 'install_jobsub_tools':
-       command => "/bin/su products -c \" . /fnal/ups/etc/setups.sh; setup ups; setup upd; upd install jobsub_tools ${jobsub_tools_version} -f Linux+2; ups declare -c jobsub_tools ${jobsub_tools_version} -f Linux+2 \"  ",
-       require => [ Package['jobsub'], Package['upsupdbootstrap-fnal'], Package['condor'], Package['httpd'] ],
-       unless  => "/bin/su products -c \" . /fnal/ups/etc/setups.sh; setup ups; setup upd; ups exist jobsub_tools ${jobsub_tools_version} \" " ,
+       command => "/bin/su products -c \" . /fnal/ups/etc/setups.sh; setup ups; setup upd; upd install jobsub_tools $jobsub_server::vars::jobsub_tools_version -f Linux+2; ups declare -c jobsub_tools $jobsub_server::vars::jobsub_tools_version -f Linux+2 \"  ",
+       require => [ Package['upsupdbootstrap-fnal'], ],
+       unless  => "/bin/su products -c \" . /fnal/ups/etc/setups.sh; setup ups; setup upd; ups exist jobsub_tools $jobsub_server::vars::jobsub_tools_version \" " ,
      }
 
 }
