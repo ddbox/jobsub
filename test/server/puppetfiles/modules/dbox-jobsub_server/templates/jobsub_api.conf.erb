@@ -4,7 +4,7 @@ LogLevel info
 
 <VirtualHost *:8443>
     ServerAlias jobsub
-    WSGIDaemonProcess jobsub user=<%= @jobsub_user %> group=<%= @jobsub_group %> processes=2 threads=25 python-path=/opt/jobsub/server/webapp:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger
+    WSGIDaemonProcess jobsub user=<%= scope.lookupvar('jobsub_server::vars:jobsub_user') %> group=<%= scope.lookupvar('jobsub_server::vars:jobsub_group') %> processes=2 threads=25 python-path=/opt/jobsub/server/webapp:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger
     WSGIProcessGroup jobsub
     WSGIScriptAlias / /opt/jobsub/server/webapp/jobsub_api.py
 
@@ -16,8 +16,8 @@ LogLevel info
     SetEnv JOBSUB_CREDENTIALS_DIR ~/.security
     SetEnv KADMIN_PASSWD_FILE ~/.security/kadmin_passwd
     SetEnv KCA_DN_PATTERN_LIST  '^/DC=gov/DC=fnal/O=Fermilab/OU=People/CN.*/CN=UID:(.*$),^/DC=gov/DC=fnal/O=Fermilab/OU=Robots/CN.*/CN=cron/CN.*/CN=UID:(.*$)'
-    setEnv X509_USER_CERT  /etc/grid-security/jobsub/<%= @jobsub_ha_servicename %>-hostcert.pem
-    setEnv X509_USER_KEY  /etc/grid-security/jobsub/<%= @jobsub_ha_servicename %>-hostkey.pem
+    setEnv X509_USER_CERT  /etc/grid-security/jobsub/<%= scope.lookupvar('jobsub_server::vars:jobsub_ha_servicename') %>-hostcert.pem
+    setEnv X509_USER_KEY  /etc/grid-security/jobsub/<%= scope.lookupvar('jobsub_server::vars:jobsub_ha_servicename') %>-hostkey.pem
 
     AliasMatch ^/([^/]*\.css) /var/www/html/static/styles/$1
     Alias /static/ /var/www/html/static/
@@ -38,8 +38,8 @@ LogLevel info
     SSLProtocol all -SSLv2 -SSLv3
     SSLCipherSuite ALL:!ADH:!EXPORT:!SSLv2:!SSLv3:RC4+RSA:+HIGH:+MEDIUM:+LOW
 
-    SSLCertificateFile /etc/grid-security/jobsub/<%= @jobsub_ha_servicename %>-hostcert.pem
-    SSLCertificateKeyFile /etc/grid-security/jobsub/<%= @jobsub_ha_servicename %>-hostkey.pem
+    SSLCertificateFile /etc/grid-security/jobsub/<%= scope.lookupvar('jobsub_server::vars:jobsub_ha_servicename') %>-hostcert.pem
+    SSLCertificateKeyFile /etc/grid-security/jobsub/<%= scope.lookupvar('jobsub_server::vars:jobsub_ha_servicename') %>-hostkey.pem
     SSLCACertificatePath /etc/grid-security/certificates
     SSLCACertificateFile /etc/grid-security/certificates/FNAL-SLCS.pem
 
