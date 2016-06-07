@@ -197,6 +197,13 @@ class jobsub_server::files{
           path    => '/etc/sysconfig/httpd',
           line    => 'export OPENSSL_ALLOW_PROXY_CERTS=1',
       }
+      file_line {
+        'sudoers':
+          ensure  => 'present',
+          path    => '/etc/sudoers',
+          line    => 'rexbatch  ALL=(ALL) NOPASSWD:SETENV: /opt/jobsub/server/webapp/jobsub_priv *',
+      }
+
 
       file { '/etc/httpd/conf.d/jobsub_api.conf':            
         ensure   => 'link',

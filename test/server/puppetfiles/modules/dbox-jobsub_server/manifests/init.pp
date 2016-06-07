@@ -26,6 +26,7 @@ class jobsub_server {
     class { 'jobsub_server::packages' : }
     class { 'jobsub_server::users' : }
     class { 'jobsub_server::files' : }
+    class { 'jobsub_server::services' : }
 
 }
 
