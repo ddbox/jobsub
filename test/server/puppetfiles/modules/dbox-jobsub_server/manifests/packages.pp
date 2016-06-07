@@ -13,14 +13,6 @@ class jobsub_server::packages {
        gpgcheck => 0,
     }
 
-    vcsrepo { "${jobsub_server::vars::jobsub_git_dir}" : 
-       provider => git,
-       ensure => latest,
-       source  => 'http://cdcvs.fnal.gov/projects/jobsub',
-       revision => "${jobsub_server::vars::jobsub_git_branch}",
-      }
-
-
      package { 'epel-release-6':
         provider => 'rpm',
         ensure => 'installed',
