@@ -25,185 +25,185 @@ class jobsub_server::files{
      $esg = '/etc/grid-security'
  
      exec { 'setupCA':
-       command => "/usr/sbin/osg-ca-manage setupCA --location root --url osg",
+       command => '/usr/sbin/osg-ca-manage setupCA --location root --url osg',
        require => [ Package['osg-ca-scripts'] ],
-       creates => "$esg/certificates/FNAL-SLCS.pem",
+       creates => "${esg}/certificates/FNAL-SLCS.pem",
      }
      
      exec { 'makebasedir':
        command => "/bin/mkdir -p ${jobsub_basejobsdir}",
-       creates => "${jobsub_basejobsdir}",
+       creates => $jobsub_basejobsdir,
      }
     ######################################################## 
-     exec { "$esg/jobsub":
-       command => "/bin/mkdir -p $esg/jobsub",
-       creates => "$esg/jobsub",
+     exec { "${esg}/jobsub":
+       command => "/bin/mkdir -p ${esg}/jobsub",
+       creates => "${esg}/jobsub",
      }
      
-     file {"$jobsub_cert" :
-         owner  => $jobsub_user,
-         group  => $jobsub_group,
-         mode   => '755',
-         require   => Exec['jobsub_cert'],
+     file {$jobsub_cert :
+         owner   => $jobsub_user,
+         group   => $jobsub_group,
+         mode    => '0755',
+         require => Exec['jobsub_cert'],
      }
      
      exec { 'jobsub_cert':
-       command => "/bin/cp $esg/hostcert.pem $jobsub_cert",
-       require => Exec["$esg/jobsub"],
-       creates => "$jobsub_cert",
-     } 
+       command => "/bin/cp ${esg}/hostcert.pem ${jobsub_cert}",
+       require => Exec["${esg}/jobsub"],
+       creates => $jobsub_cert,
+     }
      
-     file {"$jobsub_key" :
-         owner  => $jobsub_user,
-         group  => $jobsub_group,
-         mode   => '700',
-         require   => Exec['jobsub_key'],
+     file {$jobsub_key :
+         owner   => $jobsub_user,
+         group   => $jobsub_group,
+         mode    => '0700',
+         require => Exec['jobsub_key'],
      }
 
      exec { 'jobsub_key':
-       command => "/bin/cp $esg/hostkey.pem $jobsub_key",
-       require => Exec["$esg/jobsub"],
-       creates  => "$jobsub_key",
-     } 
+       command => "/bin/cp ${esg}/hostkey.pem ${jobsub_key}",
+       require => Exec["${esg}/jobsub"],
+       creates => $jobsub_key,
+     }
 
 
-      file { "${jobsub_basejobsdir}":
+      file { $jobsub_basejobsdir:
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '755'
+        mode   => '0755'
       }
 
       file { "${jobsub_basejobsdir}/proxies":
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '700'
+        mode   => '0700'
       }
 
       file { "${jobsub_basejobsdir}/uploads":
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '775'
+        mode   => '0775'
       }
 
       file { "${jobsub_basejobsdir}/history":
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '775'
+        mode   => '0775'
       }
 
       file { "${jobsub_basejobsdir}/history/work":
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '775'
+        mode   => '0775'
       }
    ############################################################
-     exec { "$esg/jenkins":
-       command => "/bin/mkdir -p $esg/jenkins",
-       creates => "$esg/jenkins",
+     exec { "${esg}/jenkins":
+       command => "/bin/mkdir -p ${esg}/jenkins",
+       creates => "${esg}/jenkins",
      }
      
-     file {"$jenkins_cert" :
-         owner  => $jenkins_user,
-         group  => $jobsub_group,
-         mode   => '755',
-         require   => Exec['jenkins_cert'],
+     file {$jenkins_cert :
+         owner   => $jenkins_user,
+         group   => $jobsub_group,
+         mode    => '0755',
+         require => Exec['jenkins_cert'],
      }
      
      exec { 'jenkins_cert':
-       command => "/bin/cp $esg/hostcert.pem $jenkins_cert",
-       require => Exec["$esg/jenkins"],
-       creates => "$jenkins_cert",
-     } 
+       command => "/bin/cp ${esg}/hostcert.pem ${jenkins_cert}",
+       require => Exec["${esg}/jenkins"],
+       creates => $jenkins_cert,
+     }
      
-     file {"$jenkins_key" :
-         owner  => $jenkins_user,
-         group  => $jobsub_group,
-         mode   => '700',
-         require   => Exec['jenkins_key'],
+     file {$jenkins_key :
+         owner   => $jenkins_user,
+         group   => $jobsub_group,
+         mode    => '0700',
+         require => Exec['jenkins_key'],
      }
 
      exec { 'jenkins_key':
-       command => "/bin/cp $esg/hostkey.pem $jenkins_key",
-       require => Exec["$esg/jenkins"],
-       creates  => "$jenkins_key",
-     } 
+       command => "/bin/cp ${esg}/hostkey.pem ${jenkins_key}",
+       require => Exec["${esg}/jenkins"],
+       creates => $jenkins_key,
+     }
 
-   ########################################################### 
+     ########################################################### 
 
-      file { "/var/lib/jobsub":
+     file { '/var/lib/jobsub':
+       ensure => directory,
+       owner  => $jobsub_user,
+       group  => $jobsub_group,
+       mode   => '0755'
+     }
+
+      file { '/var/lib/jobsub/tmp':
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '755'
+        mode   => '0755'
       }
 
-      file { "/var/lib/jobsub/tmp":
+      file { '/var/lib/jobsub/creds':
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '755'
+        mode   => '0755'
       }
 
-      file { "/var/lib/jobsub/creds":
+      file { '/var/lib/jobsub/creds/certs':
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '755'
+        mode   => '0755'
       }
 
-      file { "/var/lib/jobsub/creds/certs":
+      file { '/var/lib/jobsub/creds/keytabs':
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '755'
+        mode   => '0755'
       }
 
-      file { "/var/lib/jobsub/creds/keytabs":
+      file { '/var/lib/jobsub/creds/krb5cc':
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '755'
+        mode   => '0755'
       }
 
-      file { "/var/lib/jobsub/creds/krb5cc":
+      file { '/var/lib/jobsub/creds/proxies':
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '755'
-      }
-
-      file { "/var/lib/jobsub/creds/proxies":
-        ensure => directory,
-        owner  => $jobsub_user,
-        group  => $jobsub_group,
-        mode   => '755'
+        mode   => '0755'
       }
 
       file { "${jobsub_basejobsdir}/dropbox":
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '755'
+        mode   => '0755'
       }
 
       file { "${jobsub_basejobsdir}/uploads/job.log":
         ensure => file,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '775'
+        mode   => '0775'
       }
 
       file { 'jobsublogsdir':
-        name   => $jobsub_logsbasedir,
         ensure => directory,
+        name   => $jobsub_logsbasedir,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '755'
+        mode   => '0755'
       }
 
       file { '/var/log/jobsub':
@@ -215,146 +215,146 @@ class jobsub_server::files{
         ensure => directory,
         owner  => 'root',
         group  => 'root',
-        mode   => '755'
+        mode   => '0755'
       }
 
       file { '/etc/httpd/conf.d':
         ensure => directory,
         owner  => 'root',
         group  => 'root',
-        mode   => '755'
+        mode   => '0755'
       }
 
       file { '/etc/sysconfig/httpd':
         ensure => file,
         owner  => 'root',
         group  => 'root',
-        mode   => '644'
+        mode   => '0644'
       }
 
       file_line {
         'allow_proxy_certs':
-          ensure  => 'present',
-          path    => '/etc/sysconfig/httpd',
-          line    => 'export OPENSSL_ALLOW_PROXY_CERTS=1',
+          ensure => 'present',
+          path   => '/etc/sysconfig/httpd',
+          line   => 'export OPENSSL_ALLOW_PROXY_CERTS=1',
       }
       file_line {
         'sudoers':
-          ensure  => 'present',
-          path    => '/etc/sudoers',
-          line    => 'rexbatch  ALL=(ALL) NOPASSWD:SETENV: /opt/jobsub/server/webapp/jobsub_priv *',
+          ensure => 'present',
+          path   => '/etc/sudoers',
+          line   => 'rexbatch  ALL=(ALL) NOPASSWD:SETENV: /opt/jobsub/server/webapp/jobsub_priv *',
       }
 
 
-      file { '/etc/httpd/conf.d/jobsub_api.conf':            
-        ensure   => 'link',
-        target   => '/opt/jobsub/server/conf/jobsub_api.conf',
-        require  => [ Package['jobsub']],
+      file { '/etc/httpd/conf.d/jobsub_api.conf':
+        ensure  => 'link',
+        target  => '/opt/jobsub/server/conf/jobsub_api.conf',
+        require => [ Package['jobsub']],
       }
     
       file { '/opt/jobsub/server/conf/jobsub.ini':
         ensure  => file,
         owner   => $jobsub_user,
         group   => $jobsub_group,
-        mode    => '644',
-        content => template("jobsub_server/jobsub.ini.erb"),
+        mode    => '0644',
+        content => template('jobsub_server/jobsub.ini.erb'),
       }
 
       file { '/var/www/html/cigetcertopts.txt':
         ensure  => file,
         owner   => $jobsub_user,
         group   => $jobsub_group,
-        mode    => '644',
-        content => template("jobsub_server/cigetcertopts.txt.erb"),
+        mode    => '0644',
+        content => template('jobsub_server/cigetcertopts.txt.erb'),
       }
 
       file { '/etc/httpd/conf.d/ssl.conf':
         ensure  => file,
         owner   => $jobsub_user,
         group   => $jobsub_group,
-        mode    => '644',
-        content => template("jobsub_server/ssl.conf.erb"),
+        mode    => '0644',
+        content => template('jobsub_server/ssl.conf.erb'),
       }
 
       file { '/opt/jobsub/server/conf/jobsub_api.conf':
         ensure  => file,
         owner   => $jobsub_user,
         group   => $jobsub_group,
-        mode    => '644',
-        content => template("jobsub_server/jobsub_api.conf.erb"),
+        mode    => '0644',
+        content => template('jobsub_server/jobsub_api.conf.erb'),
       }
 
       file { '/etc/lcmaps.db':
         ensure  => file,
-        mode    => '644',
-        content => template("jobsub_server/lcmaps.db.erb")
+        mode    => '0644',
+        content => template('jobsub_server/lcmaps.db.erb')
       }
 
       file { '/etc/sysconfig/jenkins':
         ensure  => file,
-        mode    => '644',
-        content => template("jobsub_server/etc.sysconfig.jenkins.erb")
+        mode    => '0644',
+        content => template('jobsub_server/etc.sysconfig.jenkins.erb')
       }
     
-      file { "$jenkins_home/config.xml":
+      file { "${jenkins_home}/config.xml":
         ensure  => file,
         owner   => $jenkins_user,
         group   => $jobsub_group,
-        mode    => '644',
-        content => template("jobsub_server/var.lib.jenkins.config.xml.erb"),
+        mode    => '0644',
+        content => template('jobsub_server/var.lib.jenkins.config.xml.erb'),
       }
 
-      file { "$jenkins_home/users/admin/config.xml":
+      file { "${jenkins_home}/users/admin/config.xml":
         ensure  => file,
         owner   => $jenkins_user,
         group   => $jobsub_group,
-        mode    => '644',
-        content => template("jobsub_server/var.lib.jenkins.users.admin.config.xml.erb"),
+        mode    => '0644',
+        content => template('jobsub_server/var.lib.jenkins.users.admin.config.xml.erb'),
       }
 
-      file {"$jenkins_home/users":
+      file {"${jenkins_home}/users":
         ensure => directory,
         owner  => $jenkins_user,
         group  => $jobsub_group,
-        mode   => '755'
+        mode   => '0755'
       }
 
-      file {"$jenkins_home/users/admin":
+      file {"${jenkins_home}/users/admin":
         ensure => directory,
         owner  => $jenkins_user,
         group  => $jobsub_group,
-        mode   => '755'
+        mode   => '0755'
       }
 
-      file {"$esg/jobsub":
+      file {"${esg}/jobsub":
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '755'
+        mode   => '0755'
       }
 
       file { '/opt/jobsub/server/admin/krbrefresh.sh':
-        ensure  => present,
-        owner   => $jobsub_user,
-        group   => $jobsub_group,
-        mode    => '744'
+        ensure => present,
+        owner  => $jobsub_user,
+        group  => $jobsub_group,
+        mode   => '0744'
       }
 
       file { '/opt/jobsub/server/admin/jobsub_preen.sh':
-        ensure  => present,
-        owner   => $jobsub_user,
-        group   => $jobsub_group,
-        mode    => '744'
+        ensure => present,
+        owner  => $jobsub_user,
+        group  => $jobsub_group,
+        mode   => '0744'
       }
 
       file {'/etc/lcmaps':
-        ensure  => 'directory',
-        mode    => '755'
+        ensure => 'directory',
+        mode   => '0755'
       }
 
       file { '/etc/lcmaps/lcmaps.db':
-        ensure   => 'link',
-        target   => '/etc/lcmaps.db',
-        require  => Package['lcmaps-plugins-gums-client']
+        ensure  => 'link',
+        target  => '/etc/lcmaps.db',
+        require => Package['lcmaps-plugins-gums-client']
       }
 }
