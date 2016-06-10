@@ -12,5 +12,12 @@ class jobsub_server::vars{
     $jobsub_jobhistory_count = '30'
     $jobsub_git_branch = 'puppetized_ci'
     $jobsub_git_dir = '/var/tmp/jobsub'
-    $jobsub_ha_servicename = $hostname
+    $jobsub_cert = '/etc/grid-security/jobsub/jobsubcert.pem'
+    $jobsub_key = '/etc/grid-security/jobsub/jobsubkey.pem'
+    ######################################################
+    $jenkins_user = 'jenkins'
+    $jenkins_home = '/var/lib/jenkins'
+    $jenkins_cert = '/etc/grid-security/jenkins/jenkinscert.pem'
+    $jenkins_key = '/etc/grid-security/jenkins/jenkinskey.pem'
+    $jenkins_admin_email = 'dbox@fnal.gov'
 }
