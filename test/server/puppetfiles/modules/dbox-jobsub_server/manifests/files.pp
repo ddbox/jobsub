@@ -267,7 +267,7 @@ class jobsub_server::files{
         mode   => '0644',
       }
    
-      file { "${jobsub_user_home}/sync_cmd",
+      file { "${jobsub_user_home}/sync_cmd":
         ensure => file,
         owner   => $jobsub_user,
         group   => $jobsub_group,
