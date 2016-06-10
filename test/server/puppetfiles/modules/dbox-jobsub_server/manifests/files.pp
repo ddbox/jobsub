@@ -92,15 +92,40 @@ class jobsub_server::files{
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '0775'
+        mode   => '0775',
+      }
+
+      file { "${jobsub_basejobsdir}/history/jobsub_history.db":
+        ensure => file,
+        owner  => $jobsub_user,
+        group  => $jobsub_group,
+        mode   => '0644',
+        require => Exec['create_jobsub_history_db'],
       }
 
       file { "${jobsub_basejobsdir}/history/work":
         ensure => directory,
         owner  => $jobsub_user,
         group  => $jobsub_group,
-        mode   => '0775'
+        mode   => '0775',
       }
+
+      file { "${jobsub_basejobsdir}/history/work/create_jobsub_history_db.sql":
+        ensure => file,
+        owner  => $jobsub_user,
+        group  => $jobsub_group,
+        mode   => '0644',
+        require => File["${jobsub_basejobsdir}/history/work"],
+        content => template('jobsub_server/create_jobsub_history_db.sql.erb'),
+      }
+ 
+     $db =  "${jobsub_basejobsdir}/history/jobsub_history.db"
+     $sql = "${jobsub_basejobsdir}/history/work/create_jobsub_history_db.sql"
+
+     exec { 'create_jobsub_history_db':
+       command => "/usr/bin/sqlite3 ${db} < ${sql} ",
+       onlyif  => "/usr/bin/test ! -s ${db}",
+     }
    ############################################################
      exec { "${esg}/jenkins":
        command => "/bin/mkdir -p ${esg}/jenkins",
@@ -234,15 +259,15 @@ class jobsub_server::files{
 
       file_line {
         'allow_proxy_certs':
-          ensure => 'present',
-          path   => '/etc/sysconfig/httpd',
-          line   => 'export OPENSSL_ALLOW_PROXY_CERTS=1',
+         ensure => 'present',
+         path   => '/etc/sysconfig/httpd',
+         line   => 'export OPENSSL_ALLOW_PROXY_CERTS=1',
       }
       file_line {
         'sudoers':
-          ensure => 'present',
-          path   => '/etc/sudoers',
-          line   => 'rexbatch  ALL=(ALL) NOPASSWD:SETENV: /opt/jobsub/server/webapp/jobsub_priv *',
+         ensure => 'present',
+         path   => '/etc/sudoers',
+         line   => 'rexbatch  ALL=(ALL) NOPASSWD:SETENV: /opt/jobsub/server/webapp/jobsub_priv *',
       }
 
 
