@@ -251,7 +251,38 @@ class jobsub_server::files{
         target  => '/opt/jobsub/server/conf/jobsub_api.conf',
         require => [ Package['jobsub']],
       }
-    
+
+      file { "${jobsub_user_home}/.k5login" :
+        ensure  => file,
+        owner   => $jobsub_user,
+        group   => $jobsub_group,
+        mode    => '0600',
+        content => template('jobsub_server/jobsub_user.k5login.erb'),
+      }
+
+      file { "${jobsub_user_home}/.security" :
+        ensure => directory,
+        owner  => $jobsub_user,
+        group  => $jobsub_group,
+        mode   => '0644',
+      }
+   
+      file { "${jobsub_user_home}/sync_cmd",
+        ensure => file,
+        owner   => $jobsub_user,
+        group   => $jobsub_group,
+        mode    => '0600',
+        content => 'rsync $1:.security/* $HOME/.security; rsync $1:/var/lib/jobsub/creds/certs/* /var/lib/jobsub/creds/certs/'
+      }
+
+      file { '/etc/condor/config.d/99.local.config':
+        ensure  => file,
+        owner   => 'condor',
+        mode    => '0644',
+        require => Package['condor'],
+        content => template('jobsub_server/etc.condor.config.d.99.local.config.erb'),
+      }
+
       file { '/opt/jobsub/server/conf/jobsub.ini':
         ensure  => file,
         owner   => $jobsub_user,

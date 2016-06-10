@@ -126,7 +126,7 @@ job_expected_max_lifetime_default = 8h
 condor_tmp = <%= scope.lookupvar('jobsub_server::vars::jobsub_basejobsdir') %>/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
 condor_exec = <%= scope.lookupvar('jobsub_server::vars::jobsub_basejobsdir') %>/uploads/${GROUP}/${LOGNAME}/${WORKDIR_ID}
 history_db = <%= scope.lookupvar('jobsub_server::vars::jobsub_basejobsdir') %>/history/jobsub_history.db
-x509_user_proxy = /home/<%= scope.lookupvar('jobsub_server::vars::jobsub_user') %>/.security/${GROUP}/x509cc_${LOGNAME}
+x509_user_proxy = /var/lib/jobsub/creds/proxies/${GROUP}/x509cc_${LOGNAME}
 storage_group = <%= scope.lookupvar('jobsub_server::vars::jobsub_group') %>
 supported_groups = 'annie argoneut captmnv cdf cdms chips coupp darkside des dune dzero fermilab genie gm2 lar1 lar1nd lariat lbne lsst marsaccel marsgm2 marslbne marsmu2e minerva miniboone minos mu2e numix nova patriot seaquest test uboone'
 transfer_wrapfile = True

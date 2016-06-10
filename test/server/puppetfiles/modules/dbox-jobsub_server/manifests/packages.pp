@@ -25,6 +25,9 @@ class jobsub_server::packages {
       source   => 'https://repo.grid.iu.edu/osg/3.3/osg-3.3-el6-release-latest.rpm',
     }
 
+    package { 'fermilab-util_kx509.noarch' :
+      ensure => 'absent',
+    }
 
     package {'git': ensure => present}
     package { 'httpd': ensure => present}
