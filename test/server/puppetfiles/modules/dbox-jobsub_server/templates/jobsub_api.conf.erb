@@ -16,8 +16,10 @@ LogLevel info
     SetEnv JOBSUB_CREDENTIALS_DIR ~/.security
     SetEnv KADMIN_PASSWD_FILE ~/.security/kadmin_passwd
     SetEnv KCA_DN_PATTERN_LIST  '^/DC=gov/DC=fnal/O=Fermilab/OU=People/CN.*/CN=UID:(.*$),^/DC=gov/DC=fnal/O=Fermilab/OU=Robots/CN.*/CN=cron/CN.*/CN=UID:(.*$)'
-    setEnv X509_USER_CERT  <%= scope.lookupvar('jobsub_server::vars::jobsub_cert') %>
-    setEnv X509_USER_KEY  <%= scope.lookupvar('jobsub_server::vars::jobsub_key') %>
+    SetEnv X509_USER_CERT  <%= scope.lookupvar('jobsub_server::vars::jobsub_cert') %>
+    SetEnv X509_USER_KEY  <%= scope.lookupvar('jobsub_server::vars::jobsub_key') %>
+    SetEnv JOBSUB_SERVER_X509_USER_CERT  <%= scope.lookupvar('jobsub_server::vars::jobsub_cert') %>
+    SetEnv JOBSUB_SERVER_X509_USER_KEY  <%= scope.lookupvar('jobsub_server::vars::jobsub_key') %>
 
     AliasMatch ^/([^/]*\.css) /var/www/html/static/styles/$1
     Alias /static/ /var/www/html/static/
