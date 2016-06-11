@@ -11,11 +11,11 @@ class jobsub_server::services{
     hasstatus  => true,
     hasrestart => true,
   }
-  service{'jenkins':
-    ensure     => true,
-    enable     => true,
-    hasstatus  => true,
-    hasrestart => true,
-  }
+# service{'jenkins':
+#   ensure     => true,
+#   enable     => true,
+#   hasstatus  => true,
+#   hasrestart => true,
+# }
 }
 

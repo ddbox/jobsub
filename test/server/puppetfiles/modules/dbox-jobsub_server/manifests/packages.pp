@@ -1,11 +1,11 @@
 class jobsub_server::packages {
-    yumrepo { 'jenkins':
-      baseurl  => 'http://pkg.jenkins-ci.org/redhat',
-      descr    => 'Jenkins',
-      enabled  => 1,
-      gpgcheck => 1,
-      gpgkey   => 'http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key',
-    }
+#   yumrepo { 'jenkins':
+#     baseurl  => 'http://pkg.jenkins-ci.org/redhat',
+#     descr    => 'Jenkins',
+#     enabled  => 1,
+#     gpgcheck => 1,
+#     gpgkey   => 'http://pkg.jenkins-ci.org/redhat/jenkins-ci.org.key',
+#   }
     yumrepo { 'jobsub':
       baseurl  => 'http://web1.fnal.gov/files/jobsub/dev/6/x86_64/',
       descr    => 'Jobsub',
@@ -31,8 +31,8 @@ class jobsub_server::packages {
 
     package {'git': ensure => present}
     package { 'httpd': ensure => present}
-    package {'java-1.8.0-openjdk': ensure =>present}
-    package { 'jenkins': ensure => present, }
+#   package {'java-1.8.0-openjdk': ensure =>present}
+#   package { 'jenkins': ensure => present, }
     package { 'upsupdbootstrap-fnal': ensure => present }
 
     package { 'llrun':
@@ -55,6 +55,26 @@ class jobsub_server::packages {
       install_options => '--enablerepo=osg',
     }
 
+    #package { 'dcache-srmclient.noarch':
+    #  ensure          => present,
+    #  install_options => '--enablerepo=osg',
+    #}
+      
+    package { 'uberftp':
+      ensure          => present,
+      install_options => '--enablerepo=osg',
+    }
+
+    package { 'globus-ftp-client':
+      ensure          => present,
+      install_options => '--enablerepo=osg',
+    }
+
+#   package { 'bestman2-client':
+#     ensure          => present,
+#     install_options => '--enablerepo=osg',
+#   }
+
     package { 'condor':
       ensure          => present,
       install_options => '--enablerepo=osg',
@@ -73,15 +93,23 @@ class jobsub_server::packages {
     #install jobsub_tools version and make it current
     $cmd = '/bin/su products -c '
     $ups = '. /fnal/ups/etc/setups.sh; setup ups; setup upd; '
-    $ins = ' upd install jobsub_tools '
-    $ver =  $jobsub_server::vars::jobsub_tools_version
-    $flv = ' -f Linux+2 '
-    $cur = ' ups declare -c jobsub_tools '
+    $install = ' upd install '
+    $ver = $jobsub_server::vars::jobsub_tools_version
+    $jt_ver = "jobsub_tools ${ver} -f Linux+2"
+    $declare = ' ups declare -c '
 
     exec { 'install_jobsub_tools':#                                            #
-      command => "${cmd} \"${ups} ${ins} ${ver} ${flv};${cur} ${ver} ${flv}\" ",
+      command => "${cmd} \"${ups} ${install} ${jt_ver};${declare} ${jt_ver}\" ",
       require => [ Package['upsupdbootstrap-fnal'], ],
-      unless  => "${cmd} \"${ups} ups exist jobsub_tools ${ver} \" " ,
+      unless  => "${cmd} \"${ups} ups exist ${jt_ver} \" " ,
     }
+
+    $ifdh_v = "ifdhc v1_8_5 -f Linux64bit+2.6-2.12 -q python27"
+    exec { 'install_ifdhc':
+      command => "${cmd} \"${ups} ${install} ${ifdh_v};${declare} ${ifdh_v}\" ",
+      require => [ Package['upsupdbootstrap-fnal'], ],
+      unless  => "${cmd} \"${ups} ups exist ${ifdh_v} \" " ,
+    }
+  
 
 }

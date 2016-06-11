@@ -16,6 +16,8 @@ class jobsub_server::vars{
     $jobsub_key = '/etc/grid-security/jobsub/jobsubkey.pem'
     ######################################################
     $jenkins_user = 'jenkins'
+    $jenkins_user_uid = 3617
+    $jenkins_user_gid = $jobsub_user_gid
     $jenkins_home = '/var/lib/jenkins'
     $jenkins_cert = '/etc/grid-security/jenkins/jenkinscert.pem'
     $jenkins_key = '/etc/grid-security/jenkins/jenkinskey.pem'

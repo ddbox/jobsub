@@ -127,36 +127,36 @@ class jobsub_server::files{
        onlyif  => "/usr/bin/test ! -s ${db}",
      }
    ############################################################
-     exec { "${esg}/jenkins":
-       command => "/bin/mkdir -p ${esg}/jenkins",
-       creates => "${esg}/jenkins",
-     }
+#    exec { "${esg}/jenkins":
+#      command => "/bin/mkdir -p ${esg}/jenkins",
+#      creates => "${esg}/jenkins",
+#    }
      
-     file {$jenkins_cert :
-         owner   => $jenkins_user,
-         group   => $jobsub_group,
-         mode    => '0755',
-         require => Exec['jenkins_cert'],
-     }
+#    file {$jenkins_cert :
+#        owner   => $jenkins_user,
+#        group   => $jobsub_group,
+#        mode    => '0755',
+#        require => Exec['jenkins_cert'],
+#    }
      
-     exec { 'jenkins_cert':
-       command => "/bin/cp ${esg}/hostcert.pem ${jenkins_cert}",
-       require => Exec["${esg}/jenkins"],
-       creates => $jenkins_cert,
-     }
+#    exec { 'jenkins_cert':
+#      command => "/bin/cp ${esg}/hostcert.pem ${jenkins_cert}",
+#      require => Exec["${esg}/jenkins"],
+#      creates => $jenkins_cert,
+#    }
      
-     file {$jenkins_key :
-         owner   => $jenkins_user,
-         group   => $jobsub_group,
-         mode    => '0700',
-         require => Exec['jenkins_key'],
-     }
+#    file {$jenkins_key :
+#        owner   => $jenkins_user,
+#        group   => $jobsub_group,
+#        mode    => '0700',
+#        require => Exec['jenkins_key'],
+#    }
 
-     exec { 'jenkins_key':
-       command => "/bin/cp ${esg}/hostkey.pem ${jenkins_key}",
-       require => Exec["${esg}/jenkins"],
-       creates => $jenkins_key,
-     }
+#    exec { 'jenkins_key':
+#      command => "/bin/cp ${esg}/hostkey.pem ${jenkins_key}",
+#      require => Exec["${esg}/jenkins"],
+#      creates => $jenkins_key,
+#    }
 
      ########################################################### 
 
@@ -346,41 +346,41 @@ class jobsub_server::files{
         content => template('jobsub_server/lcmaps.db.erb')
       }
 
-      file { '/etc/sysconfig/jenkins':
-        ensure  => file,
-        mode    => '0644',
-        content => template('jobsub_server/etc.sysconfig.jenkins.erb')
-      }
+#     file { '/etc/sysconfig/jenkins':
+#       ensure  => file,
+#       mode    => '0644',
+#       content => template('jobsub_server/etc.sysconfig.jenkins.erb')
+#     }
     
-      file { "${jenkins_home}/config.xml":
-        ensure  => file,
-        owner   => $jenkins_user,
-        group   => $jobsub_group,
-        mode    => '0644',
-        content => template('jobsub_server/var.lib.jenkins.config.xml.erb'),
-      }
+#     file { "${jenkins_home}/config.xml":
+#       ensure  => file,
+#       owner   => $jenkins_user,
+#       group   => $jobsub_group,
+#       mode    => '0644',
+#       content => template('jobsub_server/var.lib.jenkins.config.xml.erb'),
+#     }
 
-      file { "${jenkins_home}/users/admin/config.xml":
-        ensure  => file,
-        owner   => $jenkins_user,
-        group   => $jobsub_group,
-        mode    => '0644',
-        content => template('jobsub_server/var.lib.jenkins.users.admin.config.xml.erb'),
-      }
+#     file { "${jenkins_home}/users/admin/config.xml":
+#       ensure  => file,
+#       owner   => $jenkins_user,
+#       group   => $jobsub_group,
+#       mode    => '0644',
+#       content => template('jobsub_server/var.lib.jenkins.users.admin.config.xml.erb'),
+#     }
 
-      file {"${jenkins_home}/users":
-        ensure => directory,
-        owner  => $jenkins_user,
-        group  => $jobsub_group,
-        mode   => '0755'
-      }
+#     file {"${jenkins_home}/users":
+#       ensure => directory,
+#       owner  => $jenkins_user,
+#       group  => $jobsub_group,
+#       mode   => '0755'
+#     }
 
-      file {"${jenkins_home}/users/admin":
-        ensure => directory,
-        owner  => $jenkins_user,
-        group  => $jobsub_group,
-        mode   => '0755'
-      }
+#     file {"${jenkins_home}/users/admin":
+#       ensure => directory,
+#       owner  => $jenkins_user,
+#       group  => $jobsub_group,
+#       mode   => '0755'
+#     }
 
       file {"${esg}/jobsub":
         ensure => directory,
