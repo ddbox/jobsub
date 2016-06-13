@@ -43,7 +43,7 @@ class jobsub_server::files{
      file {$jobsub_cert :
          owner   => $jobsub_user,
          group   => $jobsub_group,
-         mode    => '0755',
+         mode    => '0444',
          require => Exec['jobsub_cert'],
      }
      
@@ -56,7 +56,7 @@ class jobsub_server::files{
      file {$jobsub_key :
          owner   => $jobsub_user,
          group   => $jobsub_group,
-         mode    => '0700',
+         mode    => '0400',
          require => Exec['jobsub_key'],
      }
 
@@ -135,7 +135,7 @@ class jobsub_server::files{
 #    file {$jenkins_cert :
 #        owner   => $jenkins_user,
 #        group   => $jobsub_group,
-#        mode    => '0755',
+#        mode    => '0444',
 #        require => Exec['jenkins_cert'],
 #    }
      
@@ -148,7 +148,7 @@ class jobsub_server::files{
 #    file {$jenkins_key :
 #        owner   => $jenkins_user,
 #        group   => $jobsub_group,
-#        mode    => '0700',
+#        mode    => '0400',
 #        require => Exec['jenkins_key'],
 #    }
 
