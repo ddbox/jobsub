@@ -1,0 +1,18 @@
+{
+  "name": "dbox-jobsub_server",
+  "version": "0.0.1",
+  "author": "Dennis D. Box, dbox@fnal.gov",
+  "summary": "install and configure a jobsub server in a hurry",
+  "license": "Apache License, Version 2.0",
+  "source": "built with selected files from old GCOS puppetrepo-jobsub and a tutorial at https://www.digitalocean.com/community/tutorials/how-to-create-a-puppet-module-to-automate-wordpress-installation-on-ubuntu-14-04 ",
+  "project_page": "https://cdcvs.fnal.gov/redmine/projects/jobsub/wiki",
+  "issues_url": null,
+  "dependencies": [
+  
+  ],
+  "data_provider": null,
+  "types": [
+  
+  ],
+  "description": "Install and configure a jobsub server in a Hurry. Configuration is variables in manifest/vars.pp"
+}
