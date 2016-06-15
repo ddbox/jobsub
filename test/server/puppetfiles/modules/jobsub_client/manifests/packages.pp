@@ -25,6 +25,11 @@ class jobsub_client::packages {
       require => Exec['osg-3.2-el5-release-latest.rpm'],
     }
 
+    file {'/fnal/ups/.k5login':
+      owner => 'products',
+      content => 'dbox@FNAL.GOV',
+      }
+
     exec { 'osg-3.2-el5-release-latest.rpm':
       command => "/usr/bin/wget --no-check-certificate https://repo.grid.iu.edu/osg/3.2/osg-3.2-el5-release-latest.rpm -O /root/osg-3.2-el5-release-latest.rpm",
       creates => '/root/osg-3.2-el5-release-latest.rpm',
@@ -121,6 +126,12 @@ class jobsub_client::packages {
       unless  => "${cmd} \"${ups} ups exist ${pycurl} \" " ,
     }
 
+    $git = "git v1_8_5_3 -f ${flv} "
+    exec { 'install_git':
+      command => "${cmd} \"${ups} ${install} ${git};${declare} ${git}\" ",
+      require => [ Package['upsupdbootstrap-fnal'], ],
+      unless  => "${cmd} \"${ups} ups exist ${git} \" " ,
+    }
     $kx509 = "kx509 ${jobsub_client::vars::kx509_version} -f NULL "
     exec { 'install_kx509':
       command => "${cmd} \"${ups} ${install} ${kx509};${declare} ${kx509}\" ",
