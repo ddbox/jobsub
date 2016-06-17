@@ -29,7 +29,7 @@ class jobsub_client::vars{
         $yum_priorities = 'yum-plugin-priorities'
       }
       '7' : {
-        $ups_flavor = 'Linux64bit+3'
+        $ups_flavor = 'Linux64bit+3.10-2.17'
         $epel_url = 'https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm'
         $osg_url = 'https://repo.grid.iu.edu/osg/3.3/osg-3.3-el7-release-latest.rpm'
         $wget_opt = '' 
