@@ -1,27 +1,45 @@
-class jobsub_client::packages( String $ups_flavor = $jobsub_client::vars::ups_flavor) {
-
-    $osg_rpm = 'osg-3.2-el5-release-latest.rpm'
+class jobsub_client::packages( String $ups_flavor = $jobsub_client::vars::ups_flavor,
+                               String $osg_url = $jobsub_client::vars::osg_url,
+                               String $epel_url = $jobsub_client::vars::epel_url,
+                             ) {
+    $osg_rpm = basename($osg_url)
+    $epel_rpm = basename($epel_url)
+    $loc = '/var/tmp'
 
     package { 'osg-release':
       ensure   => 'installed',
       provider => 'rpm',
-      source   => "/root/${osg_rpm}",
+      source   => "${loc}/${osg_rpm}",
     }
 
-    file { "/root/${osg_rpm}":
+    file { "${loc}/${osg_rpm}":
       require => Exec["${osg_rpm}"],
     }
 
-
     exec { "${osg_rpm}":
-      command => "/usr/bin/wget --no-check-certificate https://repo.grid.iu.edu/osg/3.2/${osg_rpm} -O /root/${osg_rpm}",
+      command => "/usr/bin/wget ${jobsub_client::vars::wget_opt} ${osg_url} -O ${loc}/${osg_rpm}",
       require => Package['wget'],
-      creates => "/root/${osg_rpm}",
+      unless  => "/usr/bin/test -s ${loc}/${osg_rpm}",
     }
 
+    package { 'epel-release':
+      ensure   => 'installed',
+      provider => 'rpm',
+      source   => "${loc}/${epel_rpm}",
+    }
+
+    file { "${loc}/${epel_rpm}":
+      require => Exec["${epel_rpm}"],
+    }
+
+    exec { "${epel_rpm}":
+      command => "/usr/bin/wget ${jobsub_client::vars::wget_opt} ${epel_url} -O ${loc}/${epel_rpm}",
+      require => Package['wget'],
+      unless  => "/usr/bin/test -s ${loc}/${epel_rpm}",
+    }
     package { 'wget': ensure => present }
     package { 'fermilab-util_kx509.noarch' : ensure => absent }
-    package { 'yum-priorities': ensure => present,}
+    package { $jobsub_client::vars::yum_priorities : ensure => present,}
 
     package { 'upsupdbootstrap-fnal': ensure => present }
     file {'/fnal/ups/.k5login':
