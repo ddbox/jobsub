@@ -44,6 +44,7 @@
 #
 class jobsub_client {
     class { 'jobsub_client::vars' : }
+    class { 'jobsub_client::ups' : }
     class { 'jobsub_client::packages' : }
 #   class { 'jobsub_client::users' : }
 #   class { 'jobsub_client::files' : }
