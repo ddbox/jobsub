@@ -2,9 +2,15 @@
 ================================================================================
 v1.2.1.5
 ================================================================================
+Client
+------    
+* Bug     12930  SLF5 submission failing due to zero length file 
+* Maint   12926  Change error message when authentication fails
+
 Server
 ------
 * Bug     12829  krbrefresh/myproxy not updating CDF users krb5cc_(uid) caches
+* Bug     12937  increase lifetime of proxy retrieved from myproxy server to 24 hours
 
 ================================================================================
 v1.2.1-4
