@@ -38,7 +38,6 @@ class jobsub_client::packages( String $ups_flavor = $jobsub_client::vars::ups_fl
       unless  => "/usr/bin/test -s ${loc}/${epel_rpm}",
     }
     package { 'wget': ensure => present }
-    #package { 'fermilab-util_kx509.noarch' : ensure => absent }
     package { $jobsub_client::vars::yum_priorities : ensure => present,}
 
     package { 'upsupdbootstrap-fnal': ensure => present }
@@ -68,7 +67,6 @@ class jobsub_client::packages( String $ups_flavor = $jobsub_client::vars::ups_fl
 
     case $::os['release']['major']{
       '5' : {
-
         jobsub_client::ups::product { 
           'ups'          : version => $jobsub_client::vars::ups_version, qualifier => "-f ${ups_flavor}";
           'kx509'        : version => $jobsub_client::vars::kx509_version ;
@@ -93,9 +91,10 @@ class jobsub_client::packages( String $ups_flavor = $jobsub_client::vars::ups_fl
       } 
       '7' : {
         jobsub_client::ups::product { 
-          'ups'          : version => $jobsub_client::vars::ups_version, qualifier => "-f ${ups_flavor}";
+          'ups'          : version => 'v5_1_7', qualifier => "-f ${ups_flavor}";
           'jobsub_client': version => $jobsub_client::vars::jobsub_client_version ;
-          'ifdhc'        : version => $jobsub_client::vars::ifdhc_version, qualifier => "-f ${ups_flavor} -q python27";
+          'ifdhc'        : version => 'v1_8_2', qualifier => "-f Linux64bit+3 -q python27";
         }
+      }
   }
 }
