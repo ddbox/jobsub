@@ -285,6 +285,16 @@ class jobsub_server::files{
         content => template('jobsub_server/jobsub_user.k5login.erb'),
       }
 
+    
+      file { "/etc/sysconfig/iptables" :
+        ensure  => file,
+        notify  => Service['iptables'],
+        owner   => root,
+        group   => root,
+        mode    => '0600',
+        content => template('jobsub_server/etc.sysconfig.iptables.erb'),
+      }
+
       file { "${jobsub_user_home}/.security" :
         ensure => directory,
         owner  => $jobsub_user,

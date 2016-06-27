@@ -51,6 +51,13 @@ sandbox_readable_by_group = True
 [cdf]
 voms = cdf:/cdf
 transfer_krbcc_to_job = True
+#number of times cdf job will try transferring back data before quitting
+num_transfer_tries = 10
+#randomly sleep between one and sleep_random seconds between data transfer tries
+sleep_random = 1200
+#default host that cdf jobs try to scp data back to
+default_output_host = fcdflnxgpvm01.fnal.gov
+#
 [cdms]
 [chips]
 [coupp]
