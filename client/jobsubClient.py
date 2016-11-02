@@ -1244,7 +1244,10 @@ def create_tarfile(tar_file, tar_path, tar_type="tgz" ):
     if len(failed_file_list) > 0:
         for fname in failed_file_list:
             print("failed to add to tarfile: %s Permissions problem?\n" % fname)
-        f.close()
+            try:
+                fname.close()
+            except:
+                pass
     tar.close()
     os.chdir(orig_dir)
 

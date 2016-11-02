@@ -155,4 +155,4 @@ KRB5TICKET_DEFAULT_PRINCIPAL_PATTERN = "Default principal: (.*)"
 
 KRB5_DEFAULT_CC = 'FILE:/tmp/krb5cc_%s' % os.getuid()
 
-X509_PROXY_DEFAULT_FILE = '/tmp/jobsub_x509up_u%s' % os.getuid()
+X509_PROXY_DEFAULT_FILE = '/tmp/x509up_u%s' % os.getuid()

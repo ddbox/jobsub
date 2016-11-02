@@ -6,7 +6,11 @@ v1.2.2.1
 Client
 ------
 * Bug     13954  ups files leaving cruft in /tmp directories
-
+* Bug     12405  kerberos tickets not read properly in SL7
+* Task    13897  change client to use default location for grid proxy
+                 old location: /tmp/jobsub_x509up_u($UID)_($GROUP)
+                 new location: /tmp/x509up_u($UID) which is standard for 
+                 OSG software and plays more nicely with ifdh and cigetcert
 
 ================================================================================
 v1.2.2

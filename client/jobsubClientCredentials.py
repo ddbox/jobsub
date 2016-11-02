@@ -278,8 +278,14 @@ def krb5_ticket_lifetime(cache):
     cmd = '%s -c %s' % (klist_cmd, cache)
     cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
     lt = (re.findall(constants.KRB5TICKET_VALIDITY_HEADER, cmd_out))[0]
-    return {'stime': ' '.join(lt.split()[:2]),
-            'etime': ' '.join(lt.split()[2:4])}
+    vstring = lt[2]
+    date_parts = vstring.split()
+    ld = len(date_parts)
+    mid = ld / 2
+
+    ltdict = {'stime': ' '.join(date_parts[:mid]),
+              'etime': ' '.join(date_parts[mid:ld - 1])}
+    return ltdict
 
 def x509_lifetime(cert):
     if not os.path.exists(cert):
@@ -298,12 +304,7 @@ def x509_lifetime(cert):
     return lt
 
 def default_proxy_filename(acctGroup=None):
-    if acctGroup:
-        default_proxy_file = "%s_%s" %\
-                (constants.X509_PROXY_DEFAULT_FILE, acctGroup)
-    else:
-        default_proxy_file = constants.X509_PROXY_DEFAULT_FILE
-    return default_proxy_file
+    return constants.X509_PROXY_DEFAULT_FILE
 
 
 def proxy_issuer(proxy_fname):
