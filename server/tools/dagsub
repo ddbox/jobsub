@@ -130,18 +130,18 @@ flag will ensure that only (pos_integer) number of your jobs will run at the sam
 is intended to prevent overwhelming shared resources such as databases.
 """
 usage = """
-usage: %s -i input_file [-o output_dag] [-h(elp)] [-s(ubmit)] [--maxConcurrent  max_concurrent_jobs ]
+usage: %s -i input_file [-o output_dag] [-h(elp)] [-s(ubmit)] [--maxConcurrent  max_concurrent_jobs ] [--generate-email-summary]
 
 for detailed instructions on how to use:
 %s -manual | less
 """
 cmd_file_dummy = """
 universe      = vanilla
-executable    = %s/returnOK_%s.sh
+executable    = %s
 output     = %s/returnOK_%s.out
 error      = %s/returnOK_%s.err
 log        = %s/returnOK_%s.log
-environment   = PROCESS=$(Process);CONDOR_TMP=%s;CONDOR_EXEC=%s
+environment   = PROCESS=$(Process)
 rank       = Mips / 2 + Memory
 notification  = Error
 requirements  = ((Arch=="X86_64") || (Arch=="INTEL"))
@@ -450,11 +450,19 @@ class DagParser(object):
                         if pc not in self.pcList:
                             self.pcList.append(pc)
 
-    def printJobRelationships(self, outFile):
+    def printJobRelationships(self, outFile,args=None):
         with open(outFile, "a") as f:
             for line in self.pcList:
                 f.write("%s\n" % line)
         f.close()
+        if args.generateSummary:
+            f=open(outFile,"a")
+            cf = self.writeDummyCmdFile(args)
+            l = "FINAL JOB_FINISH %s \n" % cf
+            f.write(l)
+            l = "SCRIPT POST JOB_FINISH %s %s\n" %(args.summary_script, cf)
+            f.write(l)
+            f.close()
 
     def reportState(self):
         print "processingSerial:%s processingParallel:%s" %\
@@ -464,7 +472,7 @@ class DagParser(object):
 
     def digestInputFile(self, args):
         # strip out comments starting with '#'
-        infile = args.inputFile
+        infile = str(args.inputFile)
         xmlfile = "%s.xml" % infile
         r = re.compile("#.*")
         plist = []
@@ -614,38 +622,26 @@ class DagParser(object):
 
         f.close()
 
-    def writeDummyCmdFile(self):
+    def writeDummyCmdFile(self, args=None):
 
-        condor_tmp = os.environ.get("CONDOR_TMP")
-        if condor_tmp is None:
-            print "ERROR, CONDOR_TMP env variable needs to be set!"
-            sys.exit(-1)
-
-        condor_exec = os.environ.get("CONDOR_EXEC")
-        if condor_exec is None:
-            print "ERROR, CONDOR_EXEC env variable needs to be set!"
-            sys.exit(-1)
-
+        fp = os.path.dirname(args.outputFile)
         now = datetime.datetime.now()
         filebase = "%s%02d%02d_%02d%02d%02d" % (now.year, now.month, now.day,
                                                 now.hour, now.minute, now.second)
-        cmd_file_name = "%s/dummy%s.cmd" % (condor_tmp, filebase)
-        wrap_file_name = "%s/returnOK_%s.sh" % (condor_exec, filebase)
-        cmd_file = cmd_file_dummy % (condor_exec, filebase, condor_tmp, filebase, condor_tmp,
-                                     filebase, condor_tmp, filebase, condor_tmp, condor_exec)
+        cmd_file_name = "%s/dummy%s.cmd" % (fp, filebase)
+        wrap_file_name = args.dummy_script
+        cmd_file = cmd_file_dummy % (wrap_file_name, fp, filebase, fp,
+                                     filebase, fp, filebase)
 
         f = open(cmd_file_name, "w")
         f.write(cmd_file)
         f.close()
-        f = open(wrap_file_name, "w")
-        f.write(wrap_file_dummy)
-        f.close()
-        os.chmod(wrap_file_name, stat.S_IRWXU | stat.S_IRGRP |
-                 stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
         return cmd_file_name
 
-    def generateDag(self, outputFile=None):
+    def generateDag(self, args=None):
 
+        if args:
+            outputFile = args.outputFile
         f = open(outputFile, "w")
         l = "DOT %s.dot UPDATE\n" % outputFile
         f.write(l)
@@ -663,6 +659,8 @@ class DagParser(object):
             e = self.nodeDict[k]
             if e.tag == 'job':
                 f.write("JOB %s %s\n" % (k, e.attrib['cmd']))
+                if args.generateSummary:
+                    f.write("SCRIPT POST %s %s\n" % (k, args.dummy_script))
 
         if len(self.finishJobList) > 0:
             time.sleep(1)
@@ -675,13 +673,13 @@ class DagParser(object):
         if len(self.finishJobList) > 0:
             l = "SCRIPT POST JOB_FINISH %s \n" % self.finishJobList[1]
             f.write(l)
-
+            
         f.close()
         # self.generateDependencies(outputFile,self.jobList)
         jobList = L(self.dagDict.get('dag'), tag='serial')
         self.expand(jobList)
         self.generateParentChildList(jobList)
-        self.printJobRelationships(outputFile)
+        self.printJobRelationships(outputFile,args)
 
 
 # this should really use optparse but too many of the input
@@ -704,6 +702,8 @@ class ArgParser(object):
         self.condorSetup = cfp.get(self.submitHost, "condor_setup_cmd")
         self.group = os.environ.get("GROUP")
         self.subgroup = None
+        self.generateSummary = False
+        self.pwd = os.path.dirname(os.path.realpath(__file__))
         self.passedArgs = []
         allowed = cfp.supportedGroups()
         if len(self.condorSetup) > 0 and self.condorSetup.find(';') < 0:
@@ -742,6 +742,10 @@ class ArgParser(object):
                 self.passedArgs.append("--subgroup")
                 self.passedArgs.append(self.subgroup)
                 i += 1
+            elif arg in ["--generate-email-summary"]:
+                self.generateSummary = True
+                self.dummy_script = "%s/%s" % (self.pwd,"returnOK.sh")
+                self.summary_script = "%s/%s" % (self.pwd,"summary.sh")
 
             elif i > 0:
                 self.passedArgs.append(arg)
@@ -854,7 +858,7 @@ if __name__ == '__main__':
     args = ArgParser(c)
     d = DagParser()
     d.digestInputFile(args)
-    d.generateDag(args.outputFile)
+    d.generateDag(args)
     if args.runDag:
         j = JobRunner()
         j.doSubmit(args)
