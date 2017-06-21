@@ -137,14 +137,14 @@ for detailed instructions on how to use:
 """
 cmd_file_dummy = """
 universe      = vanilla
-executable    = %s
-output     = %s/returnOK_%s.out
-error      = %s/returnOK_%s.err
-log        = %s/returnOK_%s.log
+executable    = returnOK_%s.sh
+output     = returnOK_%s.out
+error      = returnOK_%s.err
+log        = returnOK_%s.log
 environment   = PROCESS=$(Process)
 rank       = Mips / 2 + Memory
 notification  = Error
-requirements  = ((Arch=="X86_64") || (Arch=="INTEL"))
+requirements  = ((target.Arch=="X86_64") || (target.Arch=="INTEL"))
 +RUN_ON_HEADNODE = TRUE
 
 queue
@@ -457,7 +457,7 @@ class DagParser(object):
         f.close()
         if args.generateSummary:
             f=open(outFile,"a")
-            cf = self.writeDummyCmdFile(args)
+            cf = self.writeDummyCmdFile()
             l = "FINAL JOB_FINISH %s \n" % cf
             f.write(l)
             l = "SCRIPT POST JOB_FINISH %s %s\n" %(args.summary_script, cf)
@@ -622,16 +622,16 @@ class DagParser(object):
 
         f.close()
 
-    def writeDummyCmdFile(self, args=None):
+    def writeDummyCmdFile(self):
 
-        fp = os.path.dirname(args.outputFile)
         now = datetime.datetime.now()
-        filebase = "%s%02d%02d_%02d%02d%02d" % (now.year, now.month, now.day,
-                                                now.hour, now.minute, now.second)
-        cmd_file_name = "%s/dummy%s.cmd" % (fp, filebase)
-        wrap_file_name = args.dummy_script
-        cmd_file = cmd_file_dummy % (wrap_file_name, fp, filebase, fp,
-                                     filebase, fp, filebase)
+        filebase = "%s%02d%02d_%02d%02d%02d" % (now.year, now.month,
+                                                now.day, now.hour,
+                                                now.minute, now.second)
+        cmd_file_name = "dummy%s.cmd" % (filebase)
+        wrap_file_name = "returnOK_%s.sh" % (filebase)
+        cmd_file = cmd_file_dummy % (filebase, filebase, 
+                                     filebase,  filebase)
 
         f = open(cmd_file_name, "w")
         f.write(cmd_file)
@@ -643,7 +643,7 @@ class DagParser(object):
         if args:
             outputFile = args.outputFile
         f = open(outputFile, "w")
-        l = "DOT %s.dot UPDATE\n" % outputFile
+        l = "DOT %s.dot UPDATE\n" % os.path.basename(outputFile)
         f.write(l)
 
         if len(self.beginJobList) > 0:
@@ -658,7 +658,7 @@ class DagParser(object):
         for k in sorted(self.nodeDict.keys()):
             e = self.nodeDict[k]
             if e.tag == 'job':
-                f.write("JOB %s %s\n" % (k, e.attrib['cmd']))
+                f.write("JOB %s %s\n" % (k, os.path.basename(e.attrib['cmd'])))
                 if args.generateSummary:
                     f.write("SCRIPT POST %s %s\n" % (k, args.dummy_script))
 
@@ -698,16 +698,14 @@ class ArgParser(object):
         self.viewDag = False
         self.maxJobs = 0
         self.passedArgs = None
+        self.schedd = os.environ.get("SCHEDD")
         self.submitHost = os.environ.get("SUBMIT_HOST")
-        self.condorSetup = cfp.get(self.submitHost, "condor_setup_cmd")
         self.group = os.environ.get("GROUP")
         self.subgroup = None
         self.generateSummary = False
         self.pwd = os.path.dirname(os.path.realpath(__file__))
         self.passedArgs = []
         allowed = cfp.supportedGroups()
-        if len(self.condorSetup) > 0 and self.condorSetup.find(';') < 0:
-            self.condorSetup = self.condorSetup + ";"
 
         if self.group not in allowed:
             print "ERROR do not run this script as member of group %s" % self.group
@@ -807,19 +805,56 @@ class JobRunner(object):
     def __init__(self):
         pass
 
+
+
+    def munge_jdf(self,condor_jdf):
+        files = ",".join(os.listdir("."))
+        transfer_files = "transfer_input_files = %s" % files
+        orig_name = condor_jdf + ".orig"
+        os.rename(condor_jdf, orig_name)
+        fin = open(orig_name, "r")
+        fout = open(condor_jdf, "w")
+        for line in fin:
+            if  'queue' in line:
+                fout.write("%s\n" % transfer_files)
+            fout.write("%s" % line)
+        fin.close()
+        fout.close()
+
+
+
+
     def doSubmit(self, args=None):
         cmd = ""
         # commands=JobUtils()
         (retVal, host) = commands.getstatusoutput("uname -n")
         ups_shell = os.environ.get("UPS_SHELL")
+        condor_tmp = os.environ.get("CONDOR_TMP")
+        os.chdir(condor_tmp)
+        remote_schedd = False
+        local_schedd_name = ""
         if ups_shell is None:
             ups_shell = "sh"
-
-        if host == args.submitHost:
-            cmd = """condor_submit_dag -dont_suppress_notification  """
+        if args.schedd:
+            parts = args.schedd.split('@')
+            schedd_host = parts[-1]
+            if schedd_host != args.submitHost:
+                remote_schedd = True
+            else:
+                if parts[0] != parts[-1]:
+                    local_schedd_name = parts[0]
         else:
-            cmd = """ssh %s "condor_submit_dag -dont_suppress_notification """\
-                % (args.submitHost)
+            args.schedd = args.submitHost
+
+        if local_schedd_name:
+            cmd1 = "condor_config_val SCHEDD.%s.SCHEDD_ADDRESS_FILE" % local_schedd_name
+            cmd2 = "condor_config_val SCHEDD.%s.SCHEDD_DAEMON_AD_FILE" % local_schedd_name
+            (retVal, addr_file) = commands.getstatusoutput(cmd1)
+            (retVal, daemon_file) = commands.getstatusoutput(cmd2)
+            add_spec = " -schedd-address-file %s  -schedd-daemon-ad-file %s" % (addr_file, daemon_file)
+        else:
+            add_spec = ""
+        cmd = """condor_submit_dag %s -no_submit -dont_suppress_notification  """ % add_spec
         if args.maxJobs > 0:
             cmd = cmd + " -maxjobs %d " % args.maxJobs
         usr = os.environ.get("USER")
@@ -830,6 +865,8 @@ class JobRunner(object):
             subgroup = args.subgroup
 
         cmd += """ -append "+Owner=\\"%s\\"" """ % usr
+        cmd += """ -append "+Jobsub_Submit_Dir=\\"%s\\"" """ % condor_tmp
+        cmd += """ -append "+Jobsub_Submit_Host=\\"%s\\"" """ % args.submitHost
         if subgroup:
             cmd += """-append "+AccountingGroup=\\"group_%s.%s.%s\\"" """ %\
                 (grp, subgroup, usr)
@@ -837,10 +874,26 @@ class JobRunner(object):
             cmd += """-append "+AccountingGroup=\\"group_%s.%s\\"" """ %\
                 (grp, usr)
         cmd += """ -append "+JobsubJobID=\\"\$(Cluster).\$(Process)@%s\\"" """ % (
-            args.submitHost)
-        cmd += args.outputFile
-        if host != args.submitHost:
-            cmd += ' "'
+            args.schedd)
+        cmd += os.path.basename(args.outputFile)
+        print "executing %s " % cmd
+        (retVal, val) = commands.getstatusoutput(cmd)
+        if retVal:
+            print "ERROR executing %s" % cmd
+            print val
+            retVal = retVal % 256
+            if retVal == 0:
+                retVal = 1
+            #sys.exit(retVal)
+        #print val
+        condor_jdf = args.outputFile + ".condor.sub"
+        if remote_schedd:
+            self.munge_jdf(condor_jdf)
+            cmd = "condor_submit -remote %s %s"%(args.schedd, condor_jdf)
+        elif args.schedd:
+            cmd = "condor_submit -name %s %s"%(args.schedd, condor_jdf)
+        else:
+            cmd = "condor_submit  %s"%(condor_jdf)
         print "executing %s " % cmd
         (retVal, val) = commands.getstatusoutput(cmd)
         if retVal:
@@ -851,6 +904,7 @@ class JobRunner(object):
                 retVal = 1
             sys.exit(retVal)
         print val
+        
 
 
 if __name__ == '__main__':

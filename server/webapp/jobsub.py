@@ -47,23 +47,47 @@ def is_supported_accountinggroup(acctgroup):
     return r_code
 
 
-def group_superusers(acctgroup):
-    """return a list of superusers for acctgroup
-       group_superusers can hold,release,remove other
-       users jobs in that acctgroup and can browse
+def can_submit_remote():
+    """
+    """
+
+    prs = JobsubConfigParser()
+    csr = prs.get('default', 'enable_remote_schedd_submission')
+    if csr:
+        if csr.upper() == "TRUE":
+            return True
+    return False
+        
+def global_superusers():
+    """return a list of global_superusers 
+       global_superusers can hold,release,remove other
+       users jobs and browse 
        other users sandboxes regardless of other
        settings
     """
 
     g_list = []
     prs = JobsubConfigParser()
-    susers = prs.get(acctgroup, 'group_superusers')
     global_susers = prs.get('default', 'global_superusers')
-    if susers:
-        for itm in susers.split():
-            g_list.append(itm)
     if global_susers:
         for itm in global_susers.split():
+            g_list.append(itm)
+    logger.log('returning %s' % g_list)
+    return g_list
+
+def group_superusers(acctgroup):
+    """return a list of superusers for acctgroup
+       group_superusers can hold,release,remove other
+       users jobs in that acctgroup and can browse
+       other users sandboxes in that group regardless of other
+       settings
+    """
+
+    g_list = []
+    prs = JobsubConfigParser()
+    susers = prs.get(acctgroup, 'group_superusers')
+    if susers:
+        for itm in susers.split():
             g_list.append(itm)
     logger.log('returning %s' % g_list)
     return g_list
@@ -79,6 +103,9 @@ def is_superuser_for_group(acctgroup, user):
         return user in su_list
     raise Exception('group %s not supported' % acctgroup)
 
+def is_global_superuser(user):
+    gsu = global_superusers()
+    return user in gsu
 
 def sandbox_readable_by_group(acctgroup):
     """return True if anyone in acctgroup can read and fetch
@@ -344,19 +371,19 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         job_submit_dir = os.path.join(
             jobsubConfig.commandPathUser(acctgroup, username),
             workdir_id)
+        schedd_nm = condor_commands.best_schedd(acctgroup, can_submit_remote())
+        #schedd_nm = condor_commands.schedd_name(jobsub_args)
+        #recent_duty_cycle = float(condor_commands.schedd_recent_duty_cycle(schedd_nm))
+        #srt = get_submit_reject_threshold()
 
-        schedd_nm = condor_commands.schedd_name(jobsub_args)
-        recent_duty_cycle = float(condor_commands.schedd_recent_duty_cycle(schedd_nm))
-        srt = get_submit_reject_threshold()
-
-        if recent_duty_cycle > srt:
-            err = "schedd %s is overloaded " % schedd_nm
-            err += "at %s percent busy " % (100.0*recent_duty_cycle)
-            err += "rejecting job submission, try again in a few minutes"
-            result = {'err': err}
-            logger.log(err)
-            cherrypy.response.status = 500
-            return result
+        #if recent_duty_cycle > srt:
+        #    err = "schedd %s is overloaded " % schedd_nm
+        #    err += "at %s percent busy " % (100.0*recent_duty_cycle)
+        #    err += "rejecting job submission, try again in a few minutes"
+        #    result = {'err': err}
+        #    logger.log(err)
+        #    cherrypy.response.status = 500
+        #    return result
 
         child_env['JOBSUB_INTERNAL_ACTION'] = 'SUBMIT'
         child_env['SCHEDD'] = schedd_nm
@@ -560,7 +587,7 @@ def run_cmd_as_user(command, username, child_env={}):
         err_fmt += '%s:\nSTDOUT:%s\nSTDERR:%s\nException:%s'
         err_str = err_fmt % (username, cmd, out, err, e)
         logger.log(err_str, severity=logging.ERROR)
-        logger.log(err_str, severity=logging.ERROR, logfile='submit')
+        logger.log(err_str, severity=logging.ERROR, logfile='condor_commands')
         logger.log(err_str, severity=logging.ERROR, logfile='error')
         err = err_str
 

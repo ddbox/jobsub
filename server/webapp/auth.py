@@ -182,10 +182,10 @@ def refresh_proxies(agelimit=3600):
                     grp = grp.replace("group_", "")
                     proxy_name = os.path.basename(check[2])
                     pfn = proxy_name.split('_')
-                    role=pfn[2]
+                    role=pfn[-1]
                     print "checking proxy %s %s %s %s"%(dn, user, grp, role)
                     authorize(dn, user, grp, role, agelimit)
-                    x509_fpath = x509_proxy_fname(user, grp, role, dn)
+                    x509_fpath = authutils.x509_proxy_fname(user, grp, role, dn)
                     x509_fname = os.path.basename(x509_fpath)
                     fpath = os.path.dirname(x509_fpath)
 
@@ -322,7 +322,7 @@ def check_auth(func=None, pass_through=None):
                 pass
             if not uid:
                 uid = uid_from_client_dn()
-            if uid and jobsub.is_superuser_for_group(acctgroup, uid):
+            if uid and (jobsub.is_superuser_for_group(acctgroup, uid) or jobsub.is_global_superuser(uid)):
                 return func(*args, **kwargs)
 
         

@@ -18,6 +18,7 @@ import cherrypy
 import logger
 import logging
 import re
+import time
 
 from cherrypy.lib.static import serve_file
 
@@ -26,7 +27,8 @@ from util import create_tarfile
 from auth import check_auth
 from jobsub import is_supported_accountinggroup
 from jobsub import sandbox_readable_by_group
-from jobsub import group_superusers
+from jobsub import is_superuser_for_group
+from jobsub import is_global_superuser
 from jobsub import JobsubConfig
 from jobsub import run_cmd_as_user
 from format import format_response
@@ -105,11 +107,14 @@ class SandboxResource(object):
         """
         # set cherrypy.response.timeout to something bigger than 300 seconds
         timeout = 60 * 15
-        request_uid = cherrypy.request.username
-        if not request_uid:
-            request_uid = uid_from_client_dn()
         try:
-            prs = JobsubConfigParser()
+            request_uid = cherrypy.request.username
+        except:
+            request_uid = uid_from_client_dn()
+        if not request_uid:
+            request_uid = kwargs.get('username')
+        prs = JobsubConfigParser()
+        try:
             tim = prs.get('default', 'sandbox_timeout')
             if tim is not None:
                 timeout = tim
@@ -177,7 +182,7 @@ class SandboxResource(object):
             zip_path = zip_path.rstrip()
             zip_path = zip_path.lstrip()
         if zip_path and os.path.exists(zip_path):
-            ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
+            #ts = datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")
             out_format = kwargs.get('archive_out_format', 'tgz')
             logger.log('archive_out_format:%s' % out_format)
             if out_format not in ('zip', 'tgz'):
@@ -187,17 +192,20 @@ class SandboxResource(object):
             # prevents cherrypy from doing the cleanup. Keep the files in
             # in acctgroup area to allow for cleanup
             zip_file = os.path.join(sbx_create_dir,
-                                    '%s.%s.%s' % (job_id, ts, out_format))
+                                    '%s.%s' % (job_id, out_format))
+            if partial:
+                zipfile="partial_%s" % zip_file
             rcode = {'out': zip_file}
 
-            cherrypy.request.hooks.attach('on_end_request', cleanup,
-                                          zip_file=zip_file)
-            cherrypy.request.hooks.attach('after_error_response', cleanup,
-                                          zip_file=zip_file)
+            #cherrypy.request.hooks.attach('on_end_request', cleanup,
+            #                              zip_file=zip_file)
+            #cherrypy.request.hooks.attach('after_error_response', cleanup,
+            #                              zip_file=zip_file)
             owner = os.path.basename(os.path.dirname(zip_path))
             if owner != request_uid:
                 if sandbox_readable_by_group(acctgroup) \
-                        or owner in group_superusers(acctgroup):
+                        or is_superuser_for_group(acctgroup,request_uid) \
+                        or is_global_superuser(request_uid):
                     make_sandbox_readable(zip_path, owner)
                 else:
                     err = "User %s is not allowed  to read %s, owned by %s." % (
@@ -208,6 +216,9 @@ class SandboxResource(object):
                     rcode = {'err': err}
                     return rcode
             else:
+                if self.valid_cached(zip_file):
+                    return serve_file(zip_file, 'application/x-download', 'attachment')
+
                 make_sandbox_readable(zip_path, owner)
             create_archive(zip_file, zip_path, job_id,
                            out_format, partial=partial)
@@ -231,6 +242,19 @@ class SandboxResource(object):
             rcode = {'err': ' '.join(outmsg.split())}
 
         return rcode
+
+    def valid_cached(self, zip_file):
+        rslt = False
+        if os.path.exists(zip_file):
+            stt = os.stat(zip_file)
+            zip_age = (time.time() - stt.st_mtime)
+            prs = JobsubConfigParser()
+            max_age = prs.get('default', 'max_logfile_cache_age')
+            if not max_age:
+                max_age = 1200
+            if zip_age < max_age:
+                rslt = True
+        return rslt
 
     @cherrypy.expose
     @format_response

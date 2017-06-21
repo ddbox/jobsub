@@ -787,14 +787,22 @@ class JobSubClient:
         # test this, try to guard against unnecessary schedd queries
         if len(self.schedd_list):
             return
-        listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
-        curl, response = curl_secure_context(listScheddsURL, self.credentials)
-        curl.setopt(curl.CUSTOMREQUEST, 'GET')
         best_schedd = self.server
         best_jobload = sys.maxsize
         try:
-            curl.perform()
-            http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            listScheddsURL = constants.JOBSUB_SCHEDD_LOAD_PATTERN % (self.server)
+            listScheddsURLacct = listScheddsURL + self.account_group + "/"
+            try:
+                curl, response = curl_secure_context(listScheddsURLacct, self.credentials)
+                curl.setopt(curl.CUSTOMREQUEST, 'GET')
+                curl.perform()
+                http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+            except:
+                curl, response = curl_secure_context(listScheddsURL, self.credentials)
+                curl.setopt(curl.CUSTOMREQUEST, 'GET')
+                curl.perform()
+                http_code = curl.getinfo(pycurl.RESPONSE_CODE)
+
             #r = response.getvalue()
             schedd_list = json.loads(response.getvalue())
             for line in schedd_list['out']:
@@ -812,6 +820,7 @@ class JobSubClient:
             # this will fail for secondary schedd with @ in name
             # so ignore_secondary_schedds must be true for now
             self.server = "https://%s:%s" % (best_schedd, self.serverPort)
+            #print "best schedd is %s"%self.server
         except pycurl.error as error:
             errno, errstr = error
             http_code = curl.getinfo(pycurl.RESPONSE_CODE)
@@ -932,6 +941,12 @@ class JobSubClient:
 
         content_type, code, value, serving_server =\
             self.extractResponseDetails(curl, response)
+        if self.extra_opts.get('jobid_output_only'):
+            matchObj = re.match( r'(.*)Use job id (.*) to retrieve (.*)',
+                       value, re.S|re.I)
+            if matchObj and matchObj.group(2):
+                print matchObj.group(2)
+                return
         suppress_server_details = False
         if (self.extra_opts.get('uid')
                 or self.extra_opts.get('constraint')) \
