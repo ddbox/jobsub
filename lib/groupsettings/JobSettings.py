@@ -1477,8 +1477,8 @@ class JobSettings(object):
         if samendfile:
             f.write("FINAL SAM_END %s\n" % os.path.basename(samendfile))
         if settings['mail_summary']:
-            f.write("SCRIPT POST %s_END %s %s \n" %
-                    (jobname, settings['summary_script'], os.path.basename(settings['dagendfile'])))
+            f.write("SCRIPT POST %s_END %s %s %s\n" %
+                    (jobname, settings['summary_script'], os.path.basename(settings['dagendfile']), os.path.basename(settings['dagfile'])))
 
         f.close()
 

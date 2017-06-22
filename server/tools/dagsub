@@ -228,6 +228,7 @@ class DagParser(object):
         self.nodeDict = {}
         self.dagDict = {}
         self.pcList = []
+        self.condor_cmd_list = []
 
 #######################################################################
 
@@ -450,17 +451,18 @@ class DagParser(object):
                         if pc not in self.pcList:
                             self.pcList.append(pc)
 
-    def printJobRelationships(self, outFile,args=None):
+    def printJobRelationships(self, outFile, args=None):
         with open(outFile, "a") as f:
             for line in self.pcList:
                 f.write("%s\n" % line)
         f.close()
-        if args.generateSummary:
+        if args and args.generateSummary:
             f=open(outFile,"a")
             cf = self.writeDummyCmdFile()
             l = "FINAL JOB_FINISH %s \n" % cf
             f.write(l)
-            l = "SCRIPT POST JOB_FINISH %s %s\n" %(args.summary_script, cf)
+            #l = "SCRIPT POST JOB_FINISH %s %s\n" %(args.summary_script, cf)
+            l = "SCRIPT POST JOB_FINISH %s %s %s\n" %(args.summary_script, os.path.basename(self.condor_cmd_list[-1]), outFile)
             f.write(l)
             f.close()
 
@@ -515,7 +517,9 @@ class DagParser(object):
                         j, passedArgs)
                     repVal = "jobsub %s " % passedArgs
                     line = line.replace("jobsub ", repVal)
+                    #print "executing: %s"%line
                     (retVal, val) = commands.getstatusoutput(line)
+                    #print "retVal: %s val:%s" %(retVal, val)
                     if retVal:
                         print "error processing command %s" % line
                         print val
@@ -524,12 +528,16 @@ class DagParser(object):
                         condor_cmd = ''
                         condor_cmd_list = []
                         biglist = val.split()
+                        #print "biglist %s"%biglist
                         ncmds = 0
                         i = 0
                         for word in biglist:
-                            if word.find(".cmd") >= 0 and word not in condor_cmd_list:
+                            #print "word=%s"%word
+                            if ".cmd" in word[-4:] or ".dag" in word[-4:] and word not in condor_cmd_list:
                                 ncmds = ncmds + 1
                                 condor_cmd = word
+                                if ".dag" in word[-4:]:
+                                    condor_cmd = os.path.basename(word) + ".condor.sub"
                                 jobName = "Jb_%d_%d" % (j, i)
                                 x.write("""<job name="%s" cmd="%s" />\n""" %
                                         (jobName, condor_cmd))
@@ -537,6 +545,7 @@ class DagParser(object):
                                 self.jobDict[condor_cmd] = jobName
                                 self.jobNameDict[jobName] = condor_cmd
                                 condor_cmd_list.append(condor_cmd)
+                                #print "condor_commands %s" % condor_cmd_list
                                 i += 1
                         if self.processingSerial:
                             self.jobList.append(tuple(condor_cmd_list))
@@ -550,7 +559,8 @@ class DagParser(object):
                             self.redundancy = len(condor_cmd_list)
                         else:
                             self.redundancy = len(condor_cmd_list)
-
+                        self.condor_cmd_list.extend(condor_cmd_list)
+                        #print "condor_cmd_list: %s" % self.condor_cmd_list
                         # reportState()
             x.write('</dag>\n')
             x.close()

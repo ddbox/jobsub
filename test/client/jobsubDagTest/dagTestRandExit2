@@ -1,0 +1,13 @@
+<serial>
+jobsub  -n file://jobRandExit.sh
+jobsub  -n -N 10 --generate-email-summary --maxConcurrent 5 file://jobRandExit.sh
+jobsub  -n --generate-email-summary --maxConcurrent 5 file://jobRandExit.sh
+</serial>
+<parallel>
+jobsub  -n -N 10 --generate-email-summary --maxConcurrent 5 file://jobRandExit.sh
+jobsub  -n -N 10 --generate-email-summary --maxConcurrent 5 file://jobRandExit.sh
+</parallel>
+<serial>
+jobsub  -n file://jobRandExit.sh
+</serial>
+

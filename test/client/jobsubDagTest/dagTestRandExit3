@@ -1,0 +1,4 @@
+<serial>
+jobsub  -n -N 10 --generate-email-summary --maxConcurrent 5 file://jobRandExit.sh
+</serial>
+

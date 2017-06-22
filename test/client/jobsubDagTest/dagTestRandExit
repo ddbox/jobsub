@@ -1,0 +1,54 @@
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+</serial>
+<parallel>
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+</serial>
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+</serial>
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+</serial>
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+</serial>
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+</serial>
+</parallel>
+<serial>
+jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobRandExit.sh 
+</serial>
+
