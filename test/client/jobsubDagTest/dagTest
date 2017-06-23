@@ -1,6 +1,6 @@
 <serial>
-jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobA.sh 
-jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobB.sh 
+jobsub -n  -n --mail_on_error $SUBMIT_FLAGS file://jobA.sh 
+jobsub  -n -n --mail_on_error $SUBMIT_FLAGS file://jobB.sh 
 </serial>
 <parallel>
 jobsub  -n --mail_on_error $SUBMIT_FLAGS file://jobC.sh 

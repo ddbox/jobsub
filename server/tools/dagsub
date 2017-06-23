@@ -16,9 +16,9 @@ docString = """
 manual = """
 INTRODUCTION
 ============
-%s is a script which generates and optionally runs a condor 
-DAG (directed acyclic graph) of condor jobs.  For illustration, suppose
-that you have 5 jobs A,B,C,D,E, that you want to run using condor. 
+jobsub_submit_dag is an application which generates and submits a HTCondor 
+DAG (directed acyclic graph) of jobs.  For purposes of illustration, consider
+an example where you have 5 jobs A,B,C,D,E, that you want to run using condor. 
 Job B requires A to run first, C and D require the output form B, 
 and E requires the input from C and D.
 A graphic representation would be:
@@ -31,103 +31,72 @@ A graphic representation would be:
                      \ /
                       E
 
-Further suppose for illustration that job A is submitted to condor 
-using the command jobsub -g jobA.sh, job B by jobsub -g jobB.sh, etc.
-The jobsub script has a '-n' option, which generates but does not submit
-the condor command file. When this option is added, the condor command file
-is sent to stdout.  My output for the command 'jobsub -g -n jobA.sh' was:
+Job A can be submitted submitted to condor 
+using the command jobsub_submit (stuff) file//:jobA.sh, 
+job B by jobsub_submit (stuff)  file://jobB.sh, etc.
 
- /minerva/app/users/condor-tmp/dbox/jobA.sh_20110830_105651_1.cmd
+These commands can be put in a jobsub_submit_dag input file which
+will run them in the specified order.
 
-THIS SCRIPT REQUIRES THAT ONE OR MORE CONDOR COMMAND FILES OF THE FORM
-/path/to/my/command/file/runMyJob.cmd  are sent to stdout, this
-is captured and put in the condor DAG command file
 
-INPUT FILE BASICS
+INPUT FILE BASICS 
 =================
 The input file for the DAG generator in this example would look like this:
+
 <serial>
-jobsub -g -n jobA.sh
-jobsub -g -n jobB.sh
+jobsub_submit (stuff)  file://jobA.sh
+jobsub_submit (stuff)  file://jobB.sh
 </serial>
 <parallel>
-jobsub -g -n jobC.sh
-jobsub -g -n jobD.sh
+jobsub_submit (stuff)  file://jobC.sh
+jobsub_submit (stuff)  file://jobD.sh
 </parallel>
 <serial>
-jobsub -g -n jobE.sh
+jobsub_submit (stuff) file://jobE.sh
 </serial>
+
+SUB_DAGS, i.e. A DAG OF DAGS
+===================================
+
+Many jobsub_submit commands generate a DAG internally, for example 
+
+-N (some integer) --maxConncurrent (some integer)
+
+
+
+
 
 INPUT FILE MACROS
 ============
-It is common for scripts to have inputs to 'sweep' through a set of parameters.
-Let us suppose that the jobA.sh et al accept input paramters like so:
-
-./jobA.sh -firstRun (some_number) -lastRun (some_bigger_number) -title (something arbitrary but meaningful to user)
-
-The 'macros' section of the input file handles this requirement like so:
-
-<macros>
-$first = 1
-$last = 100
-$formatted_date=`%s`
-$current_directory  = `pwd`
-$whatever = 'some string that has significance elsewhere'
-</macros>
-<serial>
-jobsub -g -n $current_directory/jobA.sh -firstRun $first -lastRun $last -title $whatever
-jobsub -g -n $current_directory/jobB.sh -firstRun $first -lastRun $last -title $whatever
-</serial>
-<parallel>
-jobsub -g -n jobC.sh -firstRun $first -lastRun $last -title $whatever
-jobsub -g -n jobD.sh -firstRun $first -lastRun $last -title $whatever
-</parallel>
-<serial>
-jobsub -g -n jobE.sh -firstRun $first -lastRun $last -title $whatever
-</serial>
-
-IT IS IMPORTANT that EACH COMMAND GENERATE THE SAME NUMBER OF CONDOR CMD
-FILES, or the resultant dag will be incorrect.
+(Feature broked during transition to client/server architecture.  Documentation omitted until this feature fixed)
 
 BEGINJOB AND FINISHJOB SCRIPTS
 =============================
-
-Users have the option of running a pre-staging script prior to thier dag
-and a cleanup script afterwards using the <beginjob> and <finishjob> tags.
-The scripts specified this way run on the submission machine and not on the 
-condor worker nodes as the serial and parallel jobs do.
-
-An example script using these tags follows:
-
-<macros>
-$project_name = 'project_3'
-$dataset_def = 'dataset_5'
-$first = 1
-$last = 100
-$whatever  = Joes Third Attempt At Running This
-</macros>
-<beginjob>
-startSAMProject.sh $dataset_def $project_name
-</beginjob>
-<serial>
-jobsub -g -n jobA.sh -project_name $project_name
-</serial><parallel>
-jobsub -g -n jobC.sh -firstRun $first -lastRun $last -title $whatever
-jobsub -g -n jobD.sh -firstRun $first -lastRun $last -title $whatever
-</parallel>
-<serial>
-jobsub -g -n jobE.sh -firstRun $first -lastRun $last -title $whatever
-</serial>
-<finishjob>
-clean_up_SAM_project.sh $project_name
-</finishjob>
+(Feature broked during transition to client/server architecture.  Documentation omitted until this feature fixed)
 
 
 RUNNING A DAG
 ==============
-%s -input_file (inputFile) -s will submit your generated DAG to condor.  The -m (pos_integer) 
-flag will ensure that only (pos_integer) number of your jobs will run at the same time, which
-is intended to prevent overwhelming shared resources such as databases.
+jobsub_submit_dag (options) file://input_file will perform the following steps:
+1) transport 'input_file' to the jobsub server
+2) generate an HTCondor DAG based on the input_file
+3) submit it to the batch server
+4) optionally send an email report when all the  jobs in the DAG complete
+
+SERVER OPTIONS
+==============
+
+--maxConcurrent (integer)  Run only (integer) jobs from the DAG at any given time.
+                           Useful for protecting shared resources.
+
+--continue-on-failure      Override the default behavior of a DAG which is to not
+                           run dependent or 'downstream' jobs if a job fails.
+
+--generate-email-summary   Email a report when the last job in the DAG completes.
+                           This option sets the  --continue-on-failure condition
+                           
+
+
 """
 usage = """
 usage: %s -i input_file [-o output_dag] [-h(elp)] [-s(ubmit)] [--maxConcurrent  max_concurrent_jobs ] [--generate-email-summary]
@@ -137,17 +106,10 @@ for detailed instructions on how to use:
 """
 cmd_file_dummy = """
 universe      = vanilla
-executable    = returnOK_%s.sh
-output     = returnOK_%s.out
-error      = returnOK_%s.err
-log        = returnOK_%s.log
-environment   = PROCESS=$(Process)
-rank       = Mips / 2 + Memory
-notification  = Error
-requirements  = ((target.Arch=="X86_64") || (target.Arch=="INTEL"))
-+RUN_ON_HEADNODE = TRUE
-
-queue
+executable    = /opt/jobsub/server/tools/returnOK.sh
+output     = returnOK_$(Cluster).$(Process).{0}.out
+error      = returnOK_$(Cluster).$(Process).{0}.err
+log        = returnOK_$(Cluster).$(Process).{0}.log
 """
 wrap_file_dummy = """#!/bin/sh
 #
@@ -457,12 +419,13 @@ class DagParser(object):
                 f.write("%s\n" % line)
         f.close()
         if args and args.generateSummary:
-            f=open(outFile,"a")
+            f = open(outFile,"a")
             cf = self.writeDummyCmdFile()
             l = "FINAL JOB_FINISH %s \n" % cf
             f.write(l)
-            #l = "SCRIPT POST JOB_FINISH %s %s\n" %(args.summary_script, cf)
-            l = "SCRIPT POST JOB_FINISH %s %s %s\n" %(args.summary_script, os.path.basename(self.condor_cmd_list[-1]), outFile)
+            l = "SCRIPT POST JOB_FINISH %s %s %s\n" %(args.summary_script,
+                                                      cf,
+                                                      os.path.basename(outFile))
             f.write(l)
             f.close()
 
@@ -488,7 +451,7 @@ class DagParser(object):
                 line = line.strip()
                 line = r.sub('', line)
                 # print "input line " , line
-                if 'jobsub ' not in line and len(line) > 0:
+                if 'jobsub ' not in line and 'dagsub ' not in line and len(line) > 0:
                     x.write("%s\n" % line)
 
                 if self.startSerial(line):
@@ -513,10 +476,26 @@ class DagParser(object):
                     j += 1
                     os.environ['JOBSUBJOBSECTION'] = "%s" % j
                     passedArgs = ' '.join(args.passedArgs)
-                    passedArgs = """ -e JOBSUBJOBSECTION --lines '+JobsubJobSection=\\\"%s\\\"' %s """ % (
+                    if 'jobsub_submit ' in line:
+                        line = line.replace("jobsub_submit ", 'jobsub ')
+                    if 'jobsub ' in line:
+                        #print "before %s line=%s" % (os.getpid(), line)
+                        passedArgs = """ -e JOBSUBJOBSECTION --lines '+JobsubJobSection=\\\"%s\\\"' %s """ % (
                         j, passedArgs)
-                    repVal = "jobsub %s " % passedArgs
-                    line = line.replace("jobsub ", repVal)
+                        repVal = "jobsub -n %s " % passedArgs
+                        line = line.replace("jobsub ", repVal)
+                        #print "after %s line=%s" % (os.getpid(), line)
+                    if 'jobsub_submit_dag ' in line:
+                        line = line.replace("jobsub_submit_dag ", "dagsub ")
+
+                    if 'dagsub ' in line:
+                        #print "before %s line=%s" % (os.getpid(), line)
+                        repVal = "dagsub %s " % passedArgs
+                        line = line.replace("dagsub ", repVal)
+                        line = line.replace(" -s ", "")
+                        line = line.replace("${JOBSUB_EXPORTS}", "")
+
+                        #print "after %s line=%s" % (os.getpid(), line)
                     #print "executing: %s"%line
                     (retVal, val) = commands.getstatusoutput(line)
                     #print "retVal: %s val:%s" %(retVal, val)
@@ -634,17 +613,36 @@ class DagParser(object):
 
     def writeDummyCmdFile(self):
 
+        excluded = ['transfer_input_files',
+                    'queue',
+                    'transfer_output',
+                    'transfer_output_files',
+                    ]
+
         now = datetime.datetime.now()
         filebase = "%s%02d%02d_%02d%02d%02d" % (now.year, now.month,
                                                 now.day, now.hour,
                                                 now.minute, now.second)
         cmd_file_name = "dummy%s.cmd" % (filebase)
-        wrap_file_name = "returnOK_%s.sh" % (filebase)
-        cmd_file = cmd_file_dummy % (filebase, filebase, 
-                                     filebase,  filebase)
-
+        cmd_file = cmd_file_dummy.format(filebase)
+        
         f = open(cmd_file_name, "w")
         f.write(cmd_file)
+        if self.condor_cmd_list and os.path.exists(self.condor_cmd_list[-1]):
+            jdf = open(self.condor_cmd_list[-1], "r")
+            append = False
+            for line in jdf:
+                if not append and line[0:11].lower() == "environment":
+                    append = True
+                if append:
+                    words = line.split()
+                    if words and words[0].lower() not in excluded:
+                        f.write(line)
+            jdf.close()
+        else:
+            f.write("requirements = True\n")
+
+        f.write("queue\n")
         f.close()
         return cmd_file_name
 
