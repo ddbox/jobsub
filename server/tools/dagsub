@@ -55,12 +55,36 @@ jobsub_submit (stuff)  file://jobD.sh
 jobsub_submit (stuff) file://jobE.sh
 </serial>
 
+
+RUNNING A DAG
+==============
+jobsub_submit_dag (options) file://input_file_1 will perform the following steps:
+1) transport 'input_file_1' to the jobsub server
+2) generate an HTCondor DAG based on the input_file
+3) submit it to the batch server
+4) optionally send an email report when all the  jobs in the DAG complete
+
+
 SUB_DAGS, i.e. A DAG OF DAGS
 ===================================
 
-Many jobsub_submit commands generate a DAG internally, for example 
+jobsub_submit_dag commands will work in input files, and can be mixed in with
+regular jobsub_submit commands.  Care must be taken not to create a circular 
+chain of submissions.  If the command detects a circular submission it will
+halt with an appropriate error message.
 
--N (some integer) --maxConncurrent (some integer)
+
+Many jobsub_submit commands generate a DAG internally, for example 
+jobsub_submit -N (some integer) --maxConncurrent (some integer)
+and jobsub_submit -N (some integer)--dataset_definition (SAM dataset definition)
+
+The following input file fragment would run two dags sequentially:
+
+<serial>
+jobsub_submit --continue-on-failure -N 10 --maxConcurrent 5  file://jobA.sh
+jobsub_submit_dag --continue-on-failure   file://input_dag_B.sh
+</serial>
+
 
 
 
@@ -75,13 +99,6 @@ BEGINJOB AND FINISHJOB SCRIPTS
 (Feature broked during transition to client/server architecture.  Documentation omitted until this feature fixed)
 
 
-RUNNING A DAG
-==============
-jobsub_submit_dag (options) file://input_file will perform the following steps:
-1) transport 'input_file' to the jobsub server
-2) generate an HTCondor DAG based on the input_file
-3) submit it to the batch server
-4) optionally send an email report when all the  jobs in the DAG complete
 
 SERVER OPTIONS
 ==============
@@ -441,6 +458,7 @@ class DagParser(object):
         xmlfile = "%s.xml" % infile
         r = re.compile("#.*")
         plist = []
+        jobsub_commands = ['jobsub ', 'dagsub ', 'jobsub_submit ', 'jobsub_submit_dag ' ]
         if len(sys.argv) > 1:
             f = open(infile, "r")
             x = open(xmlfile, "w")
@@ -450,17 +468,25 @@ class DagParser(object):
             for line in f:
                 line = line.strip()
                 line = r.sub('', line)
-                # print "input line " , line
-                if 'jobsub ' not in line and 'dagsub ' not in line and len(line) > 0:
-                    x.write("%s\n" % line)
+                #print "%s  %s line:%s " %(infile, os.getpid(), line)
+                if len(line) > 0:
+                    for cmd in jobsub_commands:
+                        if cmd in line:
+                            #pass
+                            l2=line.replace("--","-")
+                            x.write("<!-- %s -->\n" % l2)
+                            #print 'added <!-- %s --> to %s %s'%(l2,xmlfile,os.getpid())
 
                 if self.startSerial(line):
+                    x.write('<serial>\n')
                     pass
                 elif self.endSerial(line):
-                    pass
+                    x.write('</serial>\n')
                 elif self.startParallel(line):
+                    x.write('<parallel>\n')
                     plist = []
                 elif self.endParallel(line):
+                    x.write('</parallel>\n')
                     self.jobList.append(plist)
                 elif self.isInMacros(line):
                     self.processMacro(line)
@@ -496,9 +522,10 @@ class DagParser(object):
                         line = line.replace("${JOBSUB_EXPORTS}", "")
 
                         #print "after %s line=%s" % (os.getpid(), line)
-                    #print "executing: %s"%line
+                    #print "%s executing: %s"% (os.getpid(),line)
                     (retVal, val) = commands.getstatusoutput(line)
                     #print "retVal: %s val:%s" %(retVal, val)
+                    print val
                     if retVal:
                         print "error processing command %s" % line
                         print val
@@ -518,8 +545,9 @@ class DagParser(object):
                                 if ".dag" in word[-4:]:
                                     condor_cmd = os.path.basename(word) + ".condor.sub"
                                 jobName = "Jb_%d_%d" % (j, i)
-                                x.write("""<job name="%s" cmd="%s" />\n""" %
-                                        (jobName, condor_cmd))
+                                xml = """<job name="%s" cmd="%s" />\n""" % (jobName, condor_cmd)
+                                #print "%s %s:xml=%s"%(os.getpid(), xmlfile, xml)
+                                x.write(xml)
                                 self.jobNameList.append(jobName)
                                 self.jobDict[condor_cmd] = jobName
                                 self.jobNameDict[jobName] = condor_cmd
@@ -527,13 +555,14 @@ class DagParser(object):
                                 #print "condor_commands %s" % condor_cmd_list
                                 i += 1
                         if self.processingSerial:
+                            #jobList.append(tuple(condor_cmd_list))
                             self.jobList.append(tuple(condor_cmd_list))
                         if self.processingParallel:
                             plist.append(tuple(condor_cmd_list))
                         if (self.redundancy != 0 and self.redundancy != len(condor_cmd_list)):
                             print "ERROR: different number of '.cmd' files detected"
-                            print "between jobs in input file! This will generate"
-                            print "an incorrect DAG!  aborting......"
+                            #print "between jobs in input file! This will generate"
+                            #print "an incorrect DAG!  aborting......"
                             # sys.exit(-1)
                             self.redundancy = len(condor_cmd_list)
                         else:
@@ -543,6 +572,8 @@ class DagParser(object):
                         # reportState()
             x.write('</dag>\n')
             x.close()
+            #print "%s parsing %s"%(os.getpid(),xmlfile)
+
             tree = ET.parse(xmlfile)
             root = tree.getroot()
             self.labelTree(root)
@@ -803,7 +834,7 @@ class ArgParser(object):
     def printManual(self):
         m = os.path.basename(sys.argv[0])
         df = """date +%Y%m%d_%H%M%S_%N"""
-        manFile = manual % (m, df, m)
+        manFile = manual 
         print manFile
         sys.exit(0)
 
