@@ -121,6 +121,7 @@ class JobSubClient:
         self.job_executable = None
         self.job_exe_uri = None
         self.serverargs_b64en = None
+        self.payloadList = []
 
     def init_submission(self):
 
@@ -358,16 +359,17 @@ class JobSubClient:
         response.close()
         return http_code
 
-    def makeDagPayload(self, infile):
-        orig = os.getcwd()
-        dirpath = tempfile.mkdtemp()
+    def addToPayload(self, tar, infile, orig, dirpath):
+        if infile in self.payloadList:
+            return
+        os.chdir(orig)
+        infile = os.path.basename(infile)
+        self.payloadList.append(infile)
         fin = open(infile, 'r')
         z = fin.read()
-        os.chdir(dirpath)
-        fnameout = "%s" % (os.path.basename(infile))
-        fout = open(fnameout, 'w')
-        tar = tarfile.open('payload.tgz', 'w:gz')
         lines = z.split('\n')
+        os.chdir(dirpath)
+        fout = open(infile, 'w')
         for line in lines:
             wrds = re.split('\s+', line)
             la = []
@@ -378,16 +380,28 @@ class JobSubClient:
                     w3 = " ${JOBSUB_EXPORTS} ./%s" % b
                     la.append(w3)
                     os.chdir(orig)
-                    tar.add(uri2path(w), b)
+                    if b not in self.payloadList:
+                        tar.add(uri2path(w), b)
+                    self.addToPayload(tar, b, orig, dirpath)
                     os.chdir(dirpath)
                 else:
                     la.append(w)
             la.append('\n')
             l2 = ' '.join(la)
             fout.write(l2)
-        fin.close()
         fout.close()
-        tar.add(fnameout, fnameout)
+        fin.close()
+
+
+
+    def makeDagPayload(self, infile):
+        orig = os.getcwd()
+        dirpath = tempfile.mkdtemp()
+        os.chdir(dirpath)
+        tar = tarfile.open('payload.tgz', 'w:gz')
+        fnameout = "%s" % (os.path.basename(infile))
+        self.addToPayload(tar, fnameout, orig, dirpath)
+        tar.add(fnameout,fnameout)
         tar.close()
         return "%s/payload.tgz" % dirpath
 

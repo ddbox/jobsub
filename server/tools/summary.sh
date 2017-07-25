@@ -6,10 +6,10 @@ DAGFILE=`basename $2`
 OUTFILE=$CONDOR_TMP/$DAGFILE.summary.out
 DAGLOGFILE=$DAGFILE.nodes.log
 DAGPARENTLOGFILE=$DAGFILE.dagman.log
-MAILTO=`grep notify_user $CMDFILE | sed -e 's/notify_user = //'`
+MAILTO=`grep -m1 notify_user $CMDFILE | sed -e 's/notify_user//' -e 's/=//' `
 export CMDFILE CONDOR_TMP OUTFILE DAGLOGFILE DAGPARENTLOGFILE MAILTO
-JOBSUBPARENTJOBID=`grep ^000 ${DAGPARENTLOGFILE} | sed -e 's/000 (//' | sed -e 's/\.00.*/\.0\@/'`
-SCHEDD=$(grep +JobsubParentJobId $CMDFILE | cut -d '@' -f2- | sed s/\"//)
+JOBSUBPARENTJOBID=`grep -m1 ^000 ${DAGPARENTLOGFILE} | sed -e 's/000 (//' | sed -e 's/\.00.*/\.0\@/'`
+SCHEDD=$(grep -m1 +JobsubParentJobId $CMDFILE | cut -d '@' -f2- | sed s/\"//)
 export SCHEDD
 HOST=`hostname`
 JOBSUBPARENTJOBID="${JOBSUBPARENTJOBID}${SCHEDD}"

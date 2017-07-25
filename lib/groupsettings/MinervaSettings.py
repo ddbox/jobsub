@@ -65,6 +65,7 @@ class MinervaSettings(JobSettings):
         return super(MinervaSettings, self).initCmdParser()
 
     def makeWrapFilePreamble(self):
+        os.chdir(self.settings['condor_tmp'])
         super(MinervaSettings, self).makeWrapFilePreamble()
 
         f = open(self.settings['wrapfile'], 'a')

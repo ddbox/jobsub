@@ -93,6 +93,7 @@ class CdfSettings(JobSettings):
                 fh.write("%s\n" % cmd)
 
     def makeWrapFilePreamble(self):
+        os.chdir(self.settings['condor_tmp'])
         super(CdfSettings, self).makeWrapFilePreamble()
         settings = self.settings
         preWrapCommands = [
@@ -127,6 +128,7 @@ class CdfSettings(JobSettings):
         f.close()
 
     def makeWrapFile(self):
+        os.chdir(self.settings['condor_tmp'])
         # super(CdfSettings,self).makeWrapFile()
         settings = self.settings
         wrapCommands = [
@@ -148,6 +150,7 @@ class CdfSettings(JobSettings):
         f.close()
 
     def makeWrapFilePostamble(self):
+        os.chdir(self.settings['condor_tmp'])
         settings = self.settings
         num_transfer_tries = settings.get('num_transfer_tries', '8')
         sleep_random = settings.get('sleep_random', '1800')
@@ -192,6 +195,7 @@ class CdfSettings(JobSettings):
         super(CdfSettings, self).makeWrapFilePostamble()
 
     def makeCommandFile(self, job_iter=0):
+        os.chdir(self.settings['condor_tmp'])
         settings = self.settings
         if job_iter > 0:
             tag = 'CAF_JOB_START_SECTION=([0-9]+)\;CAF_SECTION=([0-9]+)\;CAF_JOB_END_SECTION=([0-9]+)'
@@ -206,6 +210,7 @@ class CdfSettings(JobSettings):
         super(CdfSettings, self).makeCommandFile(job_iter)
 
     def makeCondorFiles(self):
+        os.chdir(self.settings['condor_tmp'])
         settings = self.settings
         if 'SAM_GROUP' not in settings['added_environment']:
             settings['added_environment'].append('SAM_GROUP')

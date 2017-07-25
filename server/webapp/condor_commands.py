@@ -21,6 +21,7 @@ import socket
 import re
 import JobsubConfigParser
 from request_headers import get_client_dn
+from request_headers import path_info
 from random import randint
 
 
@@ -113,7 +114,7 @@ def condor_header(input_switch=None):
     if input_switch in ['long', 'better-analyze']:
         hdr = ''
     elif input_switch == 'dags':
-        hdr = "JOBSUBJOBID                           OWNER    DAG_INFO          SUBMITTED     RUN_TIME   ST PRI SIZE CMD\n"
+        hdr = "JOBSUBJOBID                           OWNER/NODE NAME     SUBMITTED   RUN_TIME ST PRI SIZE CMD\n"
     elif input_switch == 'hold':
         hdr = "JOBSUBJOBID                           OWNER           HELD_SINCE    HOLDREASON\n"
     else:
@@ -128,7 +129,8 @@ def condor_format(input_switch=None):
 
     jobStatusStr = """'ifThenElse(JobStatus==0,"U",ifThenElse(JobStatus==1,"I",ifThenElse(TransferringInput=?=True,"<",ifThenElse(TransferringOutput=?=True,">",ifThenElse(JobStatus==2,"R",ifThenElse(JobStatus==3,"X",ifThenElse(JobStatus==4,"C",ifThenElse(JobStatus==5,"H",ifThenElse(JobStatus==6,"E",string(JobStatus))))))))))'"""
 
-    dagStatusStr = """'ifthenelse(dagmanjobid =!= UNDEFINED, strcat(string("Section_"),string(jobsubjobsection)),ifthenelse(DAG_NodesDone =!= UNDEFINED, strcat(string("dag, "),string(DAG_NodesDone),string("/"),string(DAG_NodesTotal),string(" done")),"") )'"""
+    dagStatusStr = """'ifthenelse(dagmanjobid=?=UNDEFINED,owner,dagnodename)'"""
+    dagCompleteStr = """'ifthenelse(DAG_NodesDone =!= UNDEFINED, strcat(string(" "),string(DAG_NodesDone),string("/"),string(DAG_NodesTotal),string(" done")),"")'"""
 
     runTimeStr = """ifthenelse(JobCurrentStartDate=?=UNDEFINED,0,ifthenelse(JobStatus==2,ServerTime-JobCurrentStartDate,EnteredCurrentStatus-JobCurrentStartDate))"""
 
@@ -141,17 +143,17 @@ def condor_format(input_switch=None):
         fmtList = [
             """ -dag """,
             """ -format '%-37s'  'regexps("((.+)\#(.+)\#(.+))",globaljobid,"\\3@\\2 ")'""",
-            """ -format ' %-8s' 'ifthenelse(dagmanjobid =?= UNDEFINED, string(owner),strcat("  "))'""",
             """ -format ' %-16s '""", dagStatusStr,
             """ -format ' %-11s ' 'formatTime(QDate,"%m/%d %H:%M")'""",
             """ -format '%3d+' """, """'int(""", runTimeStr, """/(3600*24))'""",
-            """ -format '%02d' """, """'int(""", runTimeStr, """/3600)-int(24*INT(""", runTimeStr, """/(3600*24)))'""",
+            """ -format '%02d' """, """'int(""", runTimeStr, """3600)-int(24*INT(""", runTimeStr, """/(3600*24)))'""",
             """ -format ':%02d' """, """'int(""", runTimeStr, """/60)-int(60*INT(INT(""", runTimeStr, """/60)/60))'""",
             """ -format ':%02d' """, """'""", runTimeStr, """-int(60*int(""", runTimeStr, """/60))'""",
             """ -format ' %-2s' """, jobStatusStr,
             """ -format '%3d ' JobPrio """,
             """ -format ' %4.1f ' ImageSize/1024.0 """,
-            """ -format '%-30s' 'regexps(".*\/(.+)",cmd,"\\1")'""",
+            """ -format '%-20s' 'regexps(".*\/(.+)",cmd,"\\1")'""",
+            """ -format '%-1s'  """, dagCompleteStr,
             """ -format '\\n' Owner """,
         ]
     elif input_switch == "hold":
@@ -220,7 +222,15 @@ def constructFilter(acctgroup=None, uid=None, jobid=None, jobstatus=None):
     else:
         jstat_cnst = 'JobStatus==%s' % (
             JOBSTATUS_DICT.get(jobstatus.lower(), 5))
-    my_filter = " %s -constraint '%s && %s && %s && %s' " % (
+    path = path_info()
+    logger.log(path)
+    if 'dags' in path or 'dag' in path:
+        #give a hint to condor_q to consider dagmanjobid first to get proper ordering
+        fmt_str = " %s -constraint 'dagmanjobid=!=UNDEFINED||dagmanjobid=?=UNDEFINED && %s && %s && %s && %s' "
+    else:
+        fmt_str = " %s -constraint '%s && %s && %s && %s' " 
+
+    my_filter = fmt_str % (
         lorw, ac_cnst, usr_cnst, job_cnst, jstat_cnst)
     return my_filter
 

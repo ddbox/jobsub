@@ -216,6 +216,7 @@ class JobSettings(object):
 
         (stat, jobsub) = commands.getstatusoutput("which jobsub")
         self.settings['mail_summary'] = False
+        self.settings['continue_dag_failure'] = False
         self.settings['this_script'] = jobsub
         self.settings[
             'summary_script'] = "%s/summary.sh" % (os.path.dirname(self.settings['this_script']))
@@ -450,6 +451,12 @@ class JobSettings(object):
                                  help=re.sub('  \s+', ' ', """
                 generate and mail a summary report of completed/failed/removed
                 jobs in a DAG"""))
+
+        generic_group.add_option("--continue-on-failure",
+                                 dest="continue_dag_failure",
+                                 action="store_true", default=False,
+                                 help=re.sub('  \s+', ' ', """
+                continue processing DAG nodes even  if jobs have failed or been removed"""))
 
         generic_group.add_option("--email-to", dest="notify_user",
                                  action="store", type="string",
@@ -1216,16 +1223,22 @@ class JobSettings(object):
             settings['environment'] = env_list
 
     def makeDAGStart(self):
+        pwd = os.getcwd()
+        os.chdir(self.settings['condor_tmp'])
         if self.settings['dataset_definition'] != "":
             self.makeSAMBeginFiles()
         else:
             self.makeDAGBeginFiles()
+        os.chdir(pwd)
 
     def makeDAGEnd(self):
+        pwd = os.getcwd()
+        os.chdir(self.settings['condor_tmp'])
         if self.settings['dataset_definition'] != "":
             self.makeSAMEndFiles()
         else:
             self.makeDAGEndFiles()
+        os.chdir(pwd)
 
     def makeDAGBeginFiles(self):
         settings = self.settings
@@ -1454,7 +1467,7 @@ class JobSettings(object):
         nOrig = n
         for x in settings['cmd_file_list']:
             f.write("JOB %s_%d %s\n" % (exe, n, os.path.basename(x)))
-            if settings['mail_summary']:
+            if settings['mail_summary'] or settings['continue_dag_failure']:
                 f.write("SCRIPT POST %s_%d %s  \n" %
                         (exe, n, settings['dummy_script']))
             n += 1

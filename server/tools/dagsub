@@ -538,7 +538,6 @@ class DagParser(object):
                         ncmds = 0
                         i = 0
                         for word in biglist:
-                            #print "word=%s"%word
                             if ".cmd" in word[-4:] or ".dag" in word[-4:] and word not in condor_cmd_list:
                                 ncmds = ncmds + 1
                                 condor_cmd = word
@@ -572,7 +571,6 @@ class DagParser(object):
                         # reportState()
             x.write('</dag>\n')
             x.close()
-            #print "%s parsing %s"%(os.getpid(),xmlfile)
 
             tree = ET.parse(xmlfile)
             root = tree.getroot()
@@ -698,7 +696,7 @@ class DagParser(object):
             e = self.nodeDict[k]
             if e.tag == 'job':
                 f.write("JOB %s %s\n" % (k, os.path.basename(e.attrib['cmd'])))
-                if args.generateSummary:
+                if args.continueOnFailure:
                     f.write("SCRIPT POST %s %s\n" % (k, args.dummy_script))
 
         if len(self.finishJobList) > 0:
@@ -742,8 +740,10 @@ class ArgParser(object):
         self.group = os.environ.get("GROUP")
         self.subgroup = None
         self.generateSummary = False
+        self.continueOnFailure = False
         self.pwd = os.path.dirname(os.path.realpath(__file__))
         self.passedArgs = []
+        self.verbose = ""
         allowed = cfp.supportedGroups()
 
         if self.group not in allowed:
@@ -781,9 +781,16 @@ class ArgParser(object):
                 i += 1
             elif arg in ["--generate-email-summary"]:
                 self.generateSummary = True
-                self.dummy_script = "%s/%s" % (self.pwd,"returnOK.sh")
+                self.continueOnFailure = True
+                self.dummy_script = "/opt/jobsub/server/tools/returnOK.sh"
                 self.summary_script = "%s/%s" % (self.pwd,"summary.sh")
 
+            elif arg in ["--continue-on-failure"]:
+                self.continueOnFailure = True
+                self.dummy_script = "/opt/jobsub/server/tools/returnOK.sh"
+
+            elif arg in ["-v", "--verbose"]:
+                self.verbose = '--verbose' 
             elif i > 0:
                 self.passedArgs.append(arg)
             i += 1
@@ -863,12 +870,17 @@ class JobRunner(object):
 
 
 
-    def doSubmit(self, args=None):
+    #def doSubmit(self, args=None):
+    def generateSubmit(self, args=None):
+        condor_jdf = args.outputFile + ".condor.sub"
+        if os.path.exists(condor_jdf):
+            return
         cmd = ""
         # commands=JobUtils()
         (retVal, host) = commands.getstatusoutput("uname -n")
         ups_shell = os.environ.get("UPS_SHELL")
         condor_tmp = os.environ.get("CONDOR_TMP")
+        jobsub_exports = os.environ.get("JOBSUB_EXPORTS")
         os.chdir(condor_tmp)
         remote_schedd = False
         local_schedd_name = ""
@@ -893,7 +905,8 @@ class JobRunner(object):
             add_spec = " -schedd-address-file %s  -schedd-daemon-ad-file %s" % (addr_file, daemon_file)
         else:
             add_spec = ""
-        cmd = """condor_submit_dag %s -no_submit -dont_suppress_notification  """ % add_spec
+        cmd = """condor_submit_dag %s %s -no_submit  """ % (args.verbose,add_spec)
+        cmd += """ -dont_suppress_notification  -insert_sub_file dag.frag """
         if args.maxJobs > 0:
             cmd = cmd + " -maxjobs %d " % args.maxJobs
         usr = os.environ.get("USER")
@@ -903,28 +916,44 @@ class JobRunner(object):
         if args is not None:
             subgroup = args.subgroup
 
-        cmd += """ -append "+Owner=\\"%s\\"" """ % usr
-        cmd += """ -append "+Jobsub_Submit_Dir=\\"%s\\"" """ % condor_tmp
-        cmd += """ -append "+Jobsub_Submit_Host=\\"%s\\"" """ % args.submitHost
-        if subgroup:
-            cmd += """-append "+AccountingGroup=\\"group_%s.%s.%s\\"" """ %\
-                (grp, subgroup, usr)
-        else:
-            cmd += """-append "+AccountingGroup=\\"group_%s.%s\\"" """ %\
-                (grp, usr)
-        cmd += """ -append "+JobsubJobID=\\"\$(Cluster).\$(Process)@%s\\"" """ % (
-            args.schedd)
+
+        frag = open("dag.sub.frag","a")
+        for itm in jobsub_exports.split('-l'):
+            itm = itm.split('--environment')[0]
+            itm = itm.split('-e')[0]
+            itm = itm.replace("\\","")
+            itm = itm.replace("'",'')
+            itm = itm.replace(" = ","=")
+            itm = itm.strip()
+            itm = itm.replace('\r','').replace('\n','')
+            frag.write("%s\n"%itm)
+        frag.close()    
+        sortcmd = "sort -u dag.sub.frag -o dag.frag"
+        commands.getstatusoutput(sortcmd)
         cmd += os.path.basename(args.outputFile)
-        print "executing %s " % cmd
+        if args.verbose:
+       	    print "jobsub_submit_dag  executing %s" % cmd
         (retVal, val) = commands.getstatusoutput(cmd)
+        if args.verbose or retVal:
+            print val
+
         if retVal:
             print "ERROR executing %s" % cmd
             print val
             retVal = retVal % 256
             if retVal == 0:
                 retVal = 1
-            #sys.exit(retVal)
-        #print val
+                sys.exit(retVal)
+        print os.path.basename(args.outputFile) + ".condor.sub"
+
+    def doSubmit(self, args=None):
+        remote_schedd = False
+        local_schedd_name = ""
+        if args.schedd:
+            parts = args.schedd.split('@')
+            schedd_host = parts[-1]
+            if schedd_host != args.submitHost:
+                remote_schedd = True
         condor_jdf = args.outputFile + ".condor.sub"
         if remote_schedd:
             self.munge_jdf(condor_jdf)
@@ -952,6 +981,7 @@ if __name__ == '__main__':
     d = DagParser()
     d.digestInputFile(args)
     d.generateDag(args)
+    j = JobRunner()
+    j.generateSubmit(args)
     if args.runDag:
-        j = JobRunner()
         j.doSubmit(args)

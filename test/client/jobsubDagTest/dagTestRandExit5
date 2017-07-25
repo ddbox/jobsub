@@ -1,0 +1,6 @@
+<serial>
+jobsub_submit_dag  --continue-on-failure   file://dagTestRandExit3
+jobsub_submit_dag  --continue-on-failure   file://dagTestRandExit3
+jobsub_submit_dag  --continue-on-failure   file://dagTestRandExit3
+</serial>
+

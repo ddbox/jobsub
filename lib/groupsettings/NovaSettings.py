@@ -34,11 +34,13 @@ class NovaSettings(JobSettings):
         return super(NovaSettings, self).initCmdParser()
 
     def makeWrapFilePostamble(self):
+        os.chdir(self.settings['condor_tmp'])
         # print "nova.makeWrapFilePostamble"
         settings = self.settings
         return super(NovaSettings, self).makeWrapFilePostamble()
 
     def makeWrapFilePreamble(self):
+        os.chdir(self.settings['condor_tmp'])
         relfmt = """
   export NOVA_SETUP_DIR=/grid/fermiapp/nova/novaart/novasoft/setup/
   unset SETUP_UPS SETUPS_DIR

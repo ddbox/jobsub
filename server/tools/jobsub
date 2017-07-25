@@ -69,11 +69,11 @@ def munge_jdf(condor_jdf,settings):
     fin.close()
     fout.close()
 
-
-def doSubmit(settings):
-    print 'submitting....'
-    #env_vars = settings['environment'].split(';')
-    # print "doSubmit: env vars=",settings['added_environment']
+def createSubmitCmd(settings):
+    if settings.get('dagfile'):
+        dag_jdf = os.path.basename(settings['dagfile']) + ".condor.sub"
+        if os.path.exists(dag_jdf):
+            return
     exports = ""
     for x in settings['added_environment']:
         # if x.find("$ENV(")>0:
@@ -104,13 +104,22 @@ def doSubmit(settings):
     if not settings['usedagman']:
         cmd = "condor_submit %s  %s" % (schedd_spec,
                                         settings['cmdfile'])
+        settings['condor_submit_cmd'] = cmd
     else:
-        append = """-append "+Owner=\\"%s\\"" -append "+AccountingGroup=\\"group_%s.%s\\"" """ %\
-            (settings['user'], settings['group'], settings['user'])
-        append = """%s -append "+JobsubJobID=\\"\$(Cluster).\$(Process)@%s\\"" """ % (
-            append, settings['schedd'])
-        append = """%s -append +Jobsub_Group=\\"%s\\" -append +Jobsub_Submit_Dir=\\"%s\\" -append +Jobsub_Submit_Host=\\"%s\\" """ %\
-                (append, settings['group'], settings['condor_tmp'], settings['submit_host'])
+        append = ""
+        frag = open("dag.sub.frag","a")
+        for itm  in settings['lines']:
+            itm = itm.replace("\\","")
+            itm = itm.replace("'",'')
+            itm = itm.replace(" = ","=")
+            itm = itm.strip()
+            itm = itm.replace('\r','').replace('\n','')
+            frag.write("%s\n" % itm)
+        frag.close()
+
+        cmd = "sort -u dag.sub.frag -o dag.frag"
+        commands.getstatusoutput(cmd)
+
         if settings.has_key('maxConcurrent'):
             maxjobs = settings['maxConcurrent']
         else:
@@ -123,10 +132,33 @@ def doSubmit(settings):
             add_spec = " -schedd-address-file %s  -schedd-daemon-ad-file %s" % (addr_file, daemon_file)
         else:
             add_spec = ""
-        cmd = "condor_submit_dag  %s -no_submit -dont_suppress_notification -maxidle %s -maxjobs %s %s %s" %\
-            (add_spec, settings['job_count'],
-             maxjobs, append, os.path.basename(settings['dagfile']))
+        cmd = "condor_submit_dag  %s -no_submit -dont_suppress_notification " % add_spec
+        cmd += "-insert_sub_file dag.frag -maxidle %s -maxjobs %s %s %s" %\
+            (settings['job_count'], maxjobs, append, os.path.basename(settings['dagfile']))
 
+        #print 'jobsub executing %s' % cmd
+        (retVal, output) = commands.getstatusoutput(cmd)
+        dag_jdf = os.path.basename(settings['dagfile']) + ".condor.sub"
+
+        if settings['verbose'] or retVal:
+            print output
+        else:
+            print dag_jdf
+
+        if remote_schedd:
+            munge_jdf(dag_jdf,settings)
+        cmd = "condor_submit %s %s" % (schedd_spec, dag_jdf)
+        settings['condor_submit_cmd'] = cmd
+        if retVal != 0:
+            retVal = retVal % 256
+            if retVal == 0:
+                retVal = 1
+                sys.exit(retVal)
+
+
+def doSubmit(settings):
+    print 'submitting....'
+    cmd = settings['condor_submit_cmd']
     if settings['verbose']:
         print "doSubmit: executing %s " % cmd
 
@@ -140,21 +172,6 @@ def doSubmit(settings):
         print "additional output: %s " % (output)
         print "if you need help with the above errors "
         print "please open a service desk ticket"
-    if settings['usedagman']:
-        dag_jdf = os.path.basename(settings['dagfile']) + ".condor.sub"
-        if remote_schedd:
-            munge_jdf(dag_jdf,settings)
-        cmd = "condor_submit %s %s" % (schedd_spec, dag_jdf)
-        (retVal, output) = commands.getstatusoutput(cmd)
-        print output
-        if retVal != 0:
-            retVal = retVal % 256
-            if retVal == 0:
-                retVal = 1
-            print "%s returned status %s " % (cmd, retVal)
-            print "additional output: %s " % (output)
-            print "if you need help with the above errors "
-            print "please open a service desk ticket"
 
     sys.exit(retVal)
 
@@ -184,9 +201,11 @@ if __name__ == "__main__":
         sys.exit(1)
     # settings.checkSanity()
     settings.makeCondorFiles()
+    createSubmitCmd(settings.settings)
     if settings.settings['verbose'] == True:
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(settings.settings)
+                
 
     if settings.settings['submit']:
         motd()
