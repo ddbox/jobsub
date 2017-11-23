@@ -8,13 +8,13 @@ class osg_client::services{
     require => Package['fetch-crl'],
   }
 
-  service{ 'fetch-crl-boot':
-    ensure => true,
-    enable => true,
-    hasstatus => true,
-    hasrestart => true,
-    require => Package['fetch-crl'],
-  }
+  #service{ 'fetch-crl-boot':
+  #  ensure => true,
+  #  enable => true,
+  #  hasstatus => true,
+  #  hasrestart => true,
+  #  require => Package['fetch-crl'],
+  #}
 
   service{ 'osg-update-certs-cron':
     ensure => true,
