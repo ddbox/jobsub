@@ -12,5 +12,12 @@ class osg_htcondor_ce::services{
     command => '/usr/sbin/osg-configure -c',
   }
 
+  service{'iptables':
+    ensure     => true,
+    enable     => true,
+    hasstatus  => true,
+    hasrestart => true,
+  }
+
 }
 

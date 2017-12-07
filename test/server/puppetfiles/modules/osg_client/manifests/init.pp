@@ -21,7 +21,7 @@
 #
 # Copyright 2016 Your name here, unless otherwise noted.
 #
-class osg_client {
+class osg_client($osg_version='3.3')  {
     class { 'osg_client::vars' : }
     class { 'osg_client::packages' : }
     class { 'osg_client::files' : }
