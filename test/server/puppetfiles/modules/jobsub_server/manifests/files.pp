@@ -19,14 +19,10 @@ class jobsub_server::files{
   $jenkins_cert = $jobsub_server::vars::jenkins_cert
   $jenkins_key = $jobsub_server::vars::jenkins_key
   $jenkins_admin_email = $jobsub_server::vars::jenkins_admin_email
+  $release_major = $jobsub_server::vars::release_major
 
 
 
-  $esg = '/etc/grid-security'
-  exec { 'setupCA':
-    command => '/usr/sbin/osg-ca-manage setupCA --location root --url osg',
-    require => [ Package['osg-ca-scripts'] ],
-  }
   
   exec { 'makebasedir':
     command => "/bin/mkdir -p ${jobsub_basejobsdir}",
@@ -116,13 +112,13 @@ class jobsub_server::files{
     require => File["${jobsub_basejobsdir}/history/work"],
     content => template('jobsub_server/create_jobsub_history_db.sql.erb'),
   }
- 
   $db =  "${jobsub_basejobsdir}/history/jobsub_history.db"
   $sql = "${jobsub_basejobsdir}/history/work/create_jobsub_history_db.sql"
   exec { 'create_jobsub_history_db':
     command => "/usr/bin/sqlite3 ${db} < ${sql} ",
     onlyif  => "/usr/bin/test ! -s ${db}",
   }
+
 ############################################################
 #    exec { "${esg}/jenkins":
 #      command => "/bin/mkdir -p ${esg}/jenkins",
@@ -258,7 +254,7 @@ class jobsub_server::files{
     'allow_proxy_certs':
     ensure => 'present',
     path   => '/etc/sysconfig/httpd',
-    line   => 'export OPENSSL_ALLOW_PROXY_CERTS=1',
+    line   => 'OPENSSL_ALLOW_PROXY_CERTS=1',
   }
   file_line {
     'sudoers':
@@ -299,13 +295,13 @@ class jobsub_server::files{
     mode   => '0644',
   }
 
-  file { "${jobsub_user_home}/sync_cmd":
-    ensure  => file,
-    owner   => $jobsub_user,
-    group   => $jobsub_group,
-    mode    => '0600',
-    content => 'for uid in willis kotwal vito kherner dbox boyd sbhat sganguly rlc ptl gfrancio dfitz11 cjclarke bussey; do rsync $1:.security/$uid.keytab  /var/lib/jobsub/creds/keytabs/; done;  rsync $1:/var/lib/jobsub/creds/certs/* /var/lib/jobsub/creds/certs/'
-  }
+  #file { "${jobsub_user_home}/sync_cmd":
+  #  ensure  => file,
+  #  owner   => $jobsub_user,
+  #  group   => $jobsub_group,
+  #  mode    => '0600',
+  #  content => 'for uid in willis kotwal vito kherner dbox boyd sbhat sganguly rlc ptl gfrancio dfitz11 cjclarke bussey; do rsync $1:.security/$uid.keytab  /var/lib/jobsub/creds/keytabs/; done;  rsync $1:/var/lib/jobsub/creds/certs/* /var/lib/jobsub/creds/certs/'
+  #}
 
   file { '/etc/condor/config.d/99.local.config':
     ensure  => file,
@@ -336,7 +332,8 @@ class jobsub_server::files{
     owner   => $jobsub_user,
     group   => $jobsub_group,
     mode    => '0644',
-    content => template('jobsub_server/ssl.conf.erb'),
+    content => template("jobsub_server/ssl.conf.${release_major}.erb"),
+
   }
 
   file { '/opt/jobsub/server/conf/jobsub_api.conf':
@@ -418,6 +415,5 @@ class jobsub_server::files{
   file { '/etc/lcmaps/lcmaps.db':
     ensure  => 'link',
     target  => '/etc/lcmaps.db',
-    require => Package['lcmaps-plugins-gums-client']
   }
 }

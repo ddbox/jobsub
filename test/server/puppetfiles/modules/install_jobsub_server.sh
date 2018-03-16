@@ -33,4 +33,4 @@ echo "" >> $REMOTE_SCRIPT
 scp $REMOTE_SCRIPT root@${REMOTE_HOST}:$REMOTE_SCRIPT
 ssh root@${REMOTE_HOST} bash $REMOTE_SCRIPT
 rm $REMOTE_SCRIPT
-ssh rexbatch@$REMOTE_HOST bash sync_cmd jobsub01.fnal.gov
+#ssh rexbatch@$REMOTE_HOST bash sync_cmd jobsub01.fnal.gov
