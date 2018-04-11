@@ -144,6 +144,10 @@ class Krb5Ticket(Credentials):
 
     def __init__(self):
         Credentials.__init__(self)
+        self.krb5CredCache = None
+        self.validFrom = None
+        self.validTo = None
+        self.principal = None
         try:
             self.krb5CredCache = self.getKrb5CredCache()
             lt = krb5_ticket_lifetime(self.krb5CredCache)
@@ -151,12 +155,24 @@ class Krb5Ticket(Credentials):
             self.validTo = lt['etime']
             self.principal = krb5_default_principal(self.krb5CredCache)
         except:
-            self.krb5CredCache = None
-            self.validFrom = None
-            self.validTo = None
-            self.principal = None
-            # logSupport.dprint(traceback.format_exc())
-            raise CredentialsNotFoundError('no valid Krb5 cache found')
+            self.populate_from_klist()
+            lt = krb5_ticket_lifetime(self.krb5CredCache)
+            self.validFrom = lt['stime']
+            self.validTo = lt['etime']
+
+    def populate_from_klist(self):
+        klist_cmd = spawn.find_executable("klist")
+        if not klist_cmd:
+            raise CredentialsNotFoundError('no klist or valid Krb5 cache found')
+        cmd_out, cmd_err = subprocessSupport.iexe_cmd(klist_cmd)
+        w=0
+        words = cmd_out.split()
+        for wrd in words:
+            if wrd.lower() == 'cache:':
+                self.krb5CredCache = words[w+1]
+            if wrd.lower() == 'principal:':
+                self.principal = words[w+1]
+            w+=1
 
     def __str__(self):
         return '%s' % {
@@ -179,8 +195,8 @@ class Krb5Ticket(Credentials):
 
         if cache_type == 'API':
             return krb5_cc
-        err = "don't know how to handle krb5 credential type '%s'" % krb5_cc
-        raise CredentialsNotFoundError(err)
+        #err = "don't know how to handle krb5 credential type '%s'" % krb5_cc
+        #raise CredentialsNotFoundError(err)
 
     def exists(self):
         if self.krb5CredCache:
@@ -248,8 +264,13 @@ def krb5_default_principal(cache=None):
             raise Exception("Unable to find command 'klist' in the PATH")
         cmd = '%s -c %s' % (klist_cmd, cache)
         cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
-        prn = (re.findall(
-            constants.KRB5TICKET_DEFAULT_PRINCIPAL_PATTERN, cmd_out))[0]
+        w=0
+        for wrd in cmd_out.split():
+            if wrd.lower() == "principal:":
+                prn = cmd_out.split()[w+1]
+            w += 1
+
+
     except:
         print sys.exc_info()[1]
         prn = "UNKNOWN"
