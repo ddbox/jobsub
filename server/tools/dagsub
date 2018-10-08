@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 docString = """
  $Id$
 """
-manual = r"""
+manual = """
 
 Server input options: --maxConcurrent  maximum number of DAG nodes that can be run simultaneously
 

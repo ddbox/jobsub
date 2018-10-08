@@ -470,7 +470,7 @@ class JobTest(unittest.TestCase):
         (
             retVal,
             output) = commands.getstatusoutput(
-            r"grep -P 'ifdh.sh\s+cp\s+-D\s+input_file_1\s+\$\{CONDOR_DIR_INPUT\}\/ \\\; input_file_2 \$\{CONDOR_DIR_INPUT\}\/'  %s" %
+            "grep -P 'ifdh.sh\s+cp\s+-D\s+input_file_1\s+\$\{CONDOR_DIR_INPUT\}\/ \\\; input_file_2 \$\{CONDOR_DIR_INPUT\}\/'  %s" %
             ns.settings['wrapfile'])
         self.assertEqual(
             retVal,
@@ -481,7 +481,7 @@ class JobTest(unittest.TestCase):
         (
             retVal,
             output) = commands.getstatusoutput(
-            r"grep -P 'ifdh.sh\s+cp\s+-D\s+\$\{CONDOR_DIR_FOO\}\/\*\s+this_is_the_foo_dir\s+\\\;\s+\$\{CONDOR_DIR_BAR\}\/\*\s+this_is_the_bar_dir' %s" %
+            "grep -P 'ifdh.sh\s+cp\s+-D\s+\$\{CONDOR_DIR_FOO\}\/\*\s+this_is_the_foo_dir\s+\\\;\s+\$\{CONDOR_DIR_BAR\}\/\*\s+this_is_the_bar_dir' %s" %
             ns.settings['wrapfile'])
         self.assertEqual(
             retVal,
@@ -504,7 +504,7 @@ class JobTest(unittest.TestCase):
         self.stdioOFF()
         ns.makeCondorFiles()
         self.stdioON()
-        (retVal, output) = commands.getstatusoutput(r"grep -P 'ifdh.sh\s+cp\s+--force=expgridftp\s+input_file_1\s+\$\{CONDOR_DIR_INPUT\}\/\s+\\\;\s+input_file_2\s+\$\{CONDOR_DIR_INPUT\}\/' %s" %
+        (retVal, output) = commands.getstatusoutput("grep -P 'ifdh.sh\s+cp\s+--force=expgridftp\s+input_file_1\s+\$\{CONDOR_DIR_INPUT\}\/\s+\\\;\s+input_file_2\s+\$\{CONDOR_DIR_INPUT\}\/' %s" %
                                                     (ns.settings['wrapfile']))
 
         self.assertEqual(
@@ -513,7 +513,7 @@ class JobTest(unittest.TestCase):
             'gftp cant find input_file_1 in ' +
             ns.settings['wrapfile'])
 
-        (retVal, output) = commands.getstatusoutput(r"grep -P 'ifdh.sh\s+cp\s+--force\=expgridftp -r -D\s+\$\{CONDOR_DIR_FOO\}\/\s+this_is_the_foo_dir\s+\\\;\s+\$\{CONDOR_DIR_BAR\}\/\s+this_is_the_bar_dir' %s" %
+        (retVal, output) = commands.getstatusoutput("grep -P 'ifdh.sh\s+cp\s+--force\=expgridftp -r -D\s+\$\{CONDOR_DIR_FOO\}\/\s+this_is_the_foo_dir\s+\\\;\s+\$\{CONDOR_DIR_BAR\}\/\s+this_is_the_bar_dir' %s" %
                                                     (ns.settings['wrapfile']))
         self.assertEqual(
             retVal,

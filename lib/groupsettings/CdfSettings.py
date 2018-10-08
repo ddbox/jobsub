@@ -131,7 +131,7 @@ class CdfSettings(JobSettings):
                 settings['outLocation'],
                 sep,
                 settings['joblog_tarfile']),
-            r"OUTPUT_DESTINATION=`echo $OUTPUT_DESTINATION | sed -e 's/\\\$/\$\{CAF_SECTION\}\-\$\{CAF_JID\}/g'`",
+            "OUTPUT_DESTINATION=`echo $OUTPUT_DESTINATION | sed -e 's/\\\$/\$\{CAF_SECTION\}\-\$\{CAF_JID\}/g'`",
             "eval OUTPUT_DESTINATION=$OUTPUT_DESTINATION ",
             "export OUTPUT_DESTINATION",
             "export HOME=${TMPDIR}/work",
