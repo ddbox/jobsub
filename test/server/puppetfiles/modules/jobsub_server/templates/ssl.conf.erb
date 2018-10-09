@@ -89,12 +89,14 @@ SSLEngine on
 #   SSL Protocol support:
 # List the enable protocol levels with which clients will be able to
 # connect.  Disable SSLv2 access by default:
-SSLProtocol -all +TLSv1.2
+#SSLProtocol -all +TLSv1.2
+SSLProtocol all -SSLv2 -SSLv3 -TLSv1 -TLSv1.1
 
 #   SSL Cipher Suite:
 # List the ciphers that the client is permitted to negotiate.
 # See the mod_ssl documentation for a complete list.
-SSLCipherSuite DEFAULT:!EXP:!SSLv2::!SSLv3:!DES:!IDEA:!SEED:+3DES
+#SSLCipherSuite DEFAULT:!EXP:!SSLv2::!SSLv3:!DES:!IDEA:!SEED:+3DES
+SSLCipherSuite ALL:!ADH:!LOW:!EXP:!RC4:!IDEA:!SEED
 
 #   Server Certificate:
 # Point SSLCertificateFile at a PEM encoded certificate.  If
@@ -130,8 +132,8 @@ SSLCACertificatePath /etc/grid-security/certificates
 #   none, optional, require and optional_no_ca.  Depth is a
 #   number which specifies how deeply to verify the certificate
 #   issuer chain before deciding the certificate is not valid.
-SSLVerifyClient require
-SSLVerifyDepth  10
+#SSLVerifyClient require
+#SSLVerifyDepth  10
 
 #   Access Control:
 #   With SSLRequire you can do per-directory access control based

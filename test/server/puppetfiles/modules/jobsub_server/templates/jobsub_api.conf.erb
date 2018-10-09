@@ -82,4 +82,7 @@ LogLevel info
     RequestHeader set SSL_CLIENT_CERT_CHAIN_4 %{SSL_CLIENT_CERT_CHAIN_4}e
 
     </Location>
+    CustomLog logs/ssl_request_log \
+              "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
+
 </VirtualHost>

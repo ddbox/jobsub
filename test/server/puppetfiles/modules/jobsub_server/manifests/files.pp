@@ -252,9 +252,9 @@ class jobsub_server::files{
 
   file_line {
     'allow_proxy_certs':
-    ensure => 'absent',
+    ensure => 'present',
     path   => '/etc/sysconfig/httpd',
-    line   => 'export OPENSSL_ALLOW_PROXY_CERTS=1',
+    line   => 'OPENSSL_ALLOW_PROXY_CERTS=1',
   }
   file_line {
     'sudoers':
