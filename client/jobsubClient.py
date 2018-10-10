@@ -158,7 +158,6 @@ class JobSubClient(object):
                                                   server=self.server)
         cert = self.credentials.get('env_cert', self.credentials.get('cert'))
         subject = jobsubClientCredentials.proxy_subject(cert)
-        # parts = subject.split('/CN=')
         parts = re.findall('/CN=[0-9]+', subject)
         if len(parts) >= 5:
             err = "\nERROR\n"
