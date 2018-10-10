@@ -160,7 +160,7 @@ class JobSubClient(object):
         subject = jobsubClientCredentials.proxy_subject(cert)
         # parts = subject.split('/CN=')
         parts = re.findall('/CN=[0-9]+', subject)
-        if len(parts) > 5:
+        if len(parts) >= 5:
             err = "\nERROR\n"
             err += """Your user proxy, %s has DN=%s .""" % (cert, subject)
             err += "  This probably means voms-proxy-init has been used to "
