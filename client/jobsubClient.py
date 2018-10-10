@@ -158,13 +158,14 @@ class JobSubClient(object):
                                                   server=self.server)
         cert = self.credentials.get('env_cert', self.credentials.get('cert'))
         subject = jobsubClientCredentials.proxy_subject(cert)
-        parts = subject.split('/CN=')
-        if len(parts) > 7:
+        # parts = subject.split('/CN=')
+        parts = re.findall('/CN=[0-9]+', subject)
+        if len(parts) > 5:
             err = "\nERROR\n"
             err += """Your user proxy, %s has DN=%s .""" % (cert, subject)
             err += "  This probably means voms-proxy-init has been used to "
             err += "refresh it too many "
-            err += " times.  The easist way to fix the problem is to remove "
+            err += " times.  The easiest way to fix the problem is to remove "
             err += "the file %s and re-create it. The easiest way " % cert
             err += "to re-create it is to re-submit your job after "
             err += "removing the file."
@@ -183,7 +184,7 @@ class JobSubClient(object):
                                            self.account_group)
         self.action_url = None
         self.submit_url = None
-        self.dropbox_uri_map = {}
+        self.dropbox_uri_map = {}   
         self.directory_tar_map = {}
         # self.is_tardir = False
         self.job_executable = None
@@ -201,8 +202,8 @@ class JobSubClient(object):
                 self.server_argv = self.server_argv[:d_idx] + \
                     self.server_argv[d_idx].split('=') + \
                     self.server_argv[d_idx + 1:]
-            self.dropbox_uri_map = get_dropbox_uri_map(self.server_argv)
-            self.get_directory_tar_map(self.server_argv)
+            self.dropbox_uri_map = get_dropbox_uri_map(self.server_argv)        
+            self.get_directory_tar_map(self.server_argv)                    
             server_env_exports = get_server_env_exports(self.server_argv)
             srv_argv = copy.copy(self.server_argv)
             if not os.path.exists(self.job_executable):
@@ -235,7 +236,7 @@ class JobSubClient(object):
                 except Exception:
                     raise JobSubClientError(err)
 
-            if self.dropbox_uri_map:
+            if self.dropbox_uri_map:       
                 self.dropbox_location = self.dropboxLocation()
                 self.dropbox_max_size = int(self.dropboxSize())
                 actual_server = self.server
@@ -248,12 +249,12 @@ class JobSubClient(object):
                 if not result:
                     raise JobSubClientSubmissionError('ifdh_upload failed')
 
-                for idx in range(0, len(srv_argv)):
+                for idx in range(0, len(srv_argv)):  
                     arg = srv_argv[idx]
                     if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
                         arg = self.directory_tar_map[arg]
                     if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
-                        key = self.dropbox_uri_map.get(arg)
+                        key = self.dropbox_uri_map.get(arg).get('hash')
                         if key is not None:
                             values = result.get(key)
                             if values is not None:
@@ -265,7 +266,7 @@ class JobSubClient(object):
                                     url = values.get('url')
                                     srv_argv[idx] = '%s%s' % \
                                         (self.dropboxServer, url)
-                                if srv_argv[idx] not in tfiles:
+                                if srv_argv[idx] not in tfiles: 
                                     tfiles.append(srv_argv[idx])
                             else:
                                 print "Dropbox upload failed with error:"
@@ -285,9 +286,6 @@ class JobSubClient(object):
                 if self.requiresFileUpload(self.job_exe_uri):
                     srv_argv[idx] = '@%s' % self.job_executable
 
-            # if self.is_tardir:
-            #    srv_argv.append('--is_tardir')
-
             if server_env_exports:
                 srv_env_export_b64en = \
                     base64.urlsafe_b64encode(server_env_exports)
@@ -296,15 +294,27 @@ class JobSubClient(object):
             self.serverargs_b64en = base64.urlsafe_b64encode(
                 ' '.join(srv_argv))
 
-    def get_directory_tar_map(self, argv):
-        """
+    def get_directory_tar_map(self, argv):          
+        """                                        
         @argv: list of directorys to tar /path/to/somedir/,
                /path/to/anotherdir/, etc
         foreach arg:
             create somedir.tar from /path/to/somedir/
         return a directory_tar_map of the form
-        {"dropbox://somedir.tar":"sha1 digest of somedir.tar",
-         "dropbox//anotherdir.tar": "sha1 digest of anotherdir.tar"}
+        {"tardir://somedir": "dropbox://somedir.tar",
+         "tardir://anotherdir": "dropbox://anotherdir.tar"}
+
+        Adds to dropbox_uri_map:
+        {
+            "dropbox://somedir.tar":{
+                "hash": "sha1 digest of somedir.tar",
+                "file": "somedir.tar_HASH"
+            },
+            "dropbox://anotherdir.tar":{
+                "hash": "sha1 digest of anotherdir.tar",
+                "file": "anotherdir.tar_HASH"
+            },
+        }
         """
         for arg in argv:
             if arg.find(constants.DIRECTORY_SUPPORTED_URI) >= 0:
@@ -312,22 +322,26 @@ class JobSubClient(object):
                 if tarpath[-1] == '/':
                     tarpath = tarpath[:-1]
                 dirname = os.path.basename(tarpath)
-                tarname = dirname + ".tar"
-                create_tarfile(tarname, tarpath, reject_list=self.reject_list)
+                tarname = dirname + ".tar"      
                 digest = digest_for_file(tarname)
+                tarname_tmp = tarname + "_" + digest
+                create_tarfile(tarname_tmp, tarpath, reject_list=self.reject_list)
                 tar_url = "dropbox://%s" % tarname
-                self.dropbox_uri_map[tar_url] = digest
+                self.dropbox_uri_map[tar_url] = {"hash": digest, "file": tarname_tmp} 
                 self.directory_tar_map[arg] = tar_url
                 # self.is_tardir = True
-                logSupport.dprint("dropbox_uri_map=%s directory_tar_map=%s" %
-                                  (self.dropbox_uri_map, self.directory_tar_map))
+                logSupport.dprint("dropbox_uri_map=%s directory_tar_map=%s" %     
+                                  (self.dropbox_uri_map, self.directory_tar_map)) 
 
     def ifdh_upload(self):
         """
         upload files from dropbox_uri_map to dropbox_location
         via ifdh
         dropbox_uri_map has form:
-        {'dropbox://annie_stuff.tar': 'd618fa5ff463c6e4070ebebc7bc0058e9b644d43'}
+        # {'dropbox://annie_stuff.tar': 'd618fa5ff463c6e4070ebebc7bc0058e9b644d43'}
+        {'dropbox://annie_stuff.tar': {'hash': 'd618fa5ff463c6e4070ebebc7bc0058e9b644d43',
+                                       'file': 'dropbox://annie_stuff.tar<_HASH if it was a dir'}
+                                        }
 
         RETURNS dictionary result of form after upload:
         {'d618fa5ff463c6e4070ebebc7bc0058e9b644d43':
@@ -336,7 +350,7 @@ class JobSubClient(object):
 
         """
 
-        result = {}
+        result = {}         # is result None always?
         os.environ['IFDH_CP_MAXRETRIES'] = "0"
         os.environ['GROUP'] = self.account_group
         os.environ['EXPERIMENT'] = self.account_group
@@ -345,9 +359,10 @@ class JobSubClient(object):
         # logSupport.dprint('self.directory_tar_map=%s'%self.directory_tar_map)
         # logSupport.dprint('self.dropbox_uri_map=%s'%self.dropbox_uri_map)
 
-        for dropbox in self.dropbox_uri_map.iterkeys():
+        for dropbox in self.dropbox_uri_map.iterkeys():    
             val = {}
-            srcpath = uri2path(dropbox)
+            # srcpath = uri2path(dropbox)
+            srcpath = self.dropbox_uri_map[dropbox]["file"]
             file_size = int(os.stat(srcpath).st_size)
             if file_size > self.dropbox_max_size:
                 err = "%s is too large %s " % (srcpath, file_size)
@@ -361,7 +376,7 @@ class JobSubClient(object):
                 srcpath = os.path.join(orig_dir, srcpath)
 
             destpath = os.path.join(self.dropbox_location,
-                                    self.dropbox_uri_map[dropbox],
+                                    self.dropbox_uri_map[dropbox]['hash'],      
                                     os.path.basename(uri2path(dropbox)))
 
             # todo hardcoded a very fnal specific url here
@@ -376,13 +391,13 @@ class JobSubClient(object):
 
             val['path'] = destpath
             val['host'] = self.server
-            result[self.dropbox_uri_map[dropbox]] = val
+            result[self.dropbox_uri_map[dropbox]['hash']] = val    
             logSupport.dprint('srcpath=%s destpath=%s' % (srcpath, destpath))
             already_exists = False
             ifdh_exe = find_ifdh_exe()
             try:
                 dropbox_dir = os.path.join(self.dropbox_location,
-                                           self.dropbox_uri_map[dropbox])
+                                           self.dropbox_uri_map[dropbox]['hash'])
                 sts = "ifdh mkdir_p %s attempt: %s" %\
                     (dropbox_dir, '')
                 logSupport.dprint(sts)
@@ -394,7 +409,7 @@ class JobSubClient(object):
                 else:
                     err = "%s mkdir %s failed: %s" %\
                         (ifdh_exe, os.path.join(self.dropbox_location,
-                                                self.dropbox_uri_map[dropbox]), error)
+                                                self.dropbox_uri_map[dropbox]['hash']), error)    
                     logSupport.dprint(err)
                     raise JobSubClientError(err)
             try:
@@ -439,6 +454,17 @@ class JobSubClient(object):
                         os.environ['X509_USER_PROXY'] = old_x509_user_proxy
                     else:
                         del os.environ['X509_USER_PROXY']
+
+            # Delete tarballs we created
+            if dropbox in self.directory_tar_map.itervalues():
+                try:
+                    os.remove(self.dropbox_uri_map[dropbox]['file'])
+                except Exception as error:
+                    err = "Cleaning up jobsub-created tarfile %s failed: %s" % (
+                            self.dropbox_uri_map[dropbox]['file'], error)
+                    logSupport.dprint(err)
+                    raise JobSubClientError(err)
+
 
         return result
 
@@ -1795,12 +1821,13 @@ def uri2path(uri):
     return re.sub('^.\S+://', '', uri)
 
 
-def get_dropbox_uri_map(argv):
+def get_dropbox_uri_map(argv):          
     # make a map with keys of file path and value of sequence
     amap = dict()
     for arg in argv:
         if arg.find(constants.DROPBOX_SUPPORTED_URI) >= 0:
-            amap[arg] = digest_for_file(uri2path(arg))
+            amap[arg] = {"hash": digest_for_file(uri2path(arg)), 
+                         "file": uri2path(arg)}
     return amap
 
 
