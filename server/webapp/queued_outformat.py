@@ -12,7 +12,7 @@
    jobsub_q -af 'some fields' should go here at relatively low cost
 """
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
 import sys
 import request_headers

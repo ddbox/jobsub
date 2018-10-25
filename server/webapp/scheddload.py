@@ -13,7 +13,7 @@
 
 """
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
 import sys
 from condor_commands import ui_condor_status_totalrunningjobs

@@ -19,16 +19,16 @@
 import os
 import sys
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
-import jobsub.server.webapp.jobsub as j_module
+import jmod
 import subprocessSupport
 import authutils
 import pwd
 
 from functools import wraps, partial
 from distutils import spawn
-from JobsubConfigParser import JobsubConfigParser
+from jobsub.lib.parser import JobsubConfigParser
 from request_headers import get_client_dn
 from request_headers import uid_from_client_dn
 
@@ -43,7 +43,7 @@ def authenticate(dn, acctgroup, acctrole):
           acctrole: role (Analysis, Production, etc)
 
     """
-    methods = j_module.get_authentication_methods(acctgroup)
+    methods = jmod.get_authentication_methods(acctgroup)
     logger.log("Authentication method precedence: %s" % methods)
     for method in methods:
         cherrypy.response.status = 200
@@ -95,7 +95,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
          age_limit: maximum age in seconds or existing proxy before
                     forced refresh
     """
-    methods = j_module.get_authentication_methods(acctgroup)
+    methods = jmod.get_authentication_methods(acctgroup)
     logger.log("Authorizing method precedence: %s" % methods)
     for method in methods:
         cherrypy.response.status = 200
@@ -217,7 +217,7 @@ def refresh_proxies(agelimit=3600):
                             stat_info = os.stat(x509_fpath)
                             uid = stat_info.st_uid
                             username = pwd.getpwuid(uid)[0]
-                            j_module.copy_file_as_user(
+                            jmod.copy_file_as_user(
                                 x509_fpath, proxy_name, username)
                         except Exception:
                             err = sys.exc_info()[1]
@@ -241,7 +241,7 @@ def refresh_proxies(agelimit=3600):
 
 
 def copy_user_krb5_caches():
-    jobsubConfig = j_module.JobsubConfig()
+    jobsubConfig = jmod.JobsubConfig()
     krb5cc_dir = jobsubConfig.krb5cc_dir
     cmd = spawn.find_executable('condor_q')
     if not cmd:
@@ -263,7 +263,7 @@ def copy_user_krb5_caches():
             try:
                 logger.log('copying %s to %s' %
                            (system_cache_fname, job_krb5_cache))
-                j_module.copy_file_as_user(
+                jmod.copy_file_as_user(
                     system_cache_fname, job_krb5_cache, username)
             except Exception:
                 logger.log("Error processing %s" % job_krb5_cache)
@@ -301,7 +301,7 @@ def check_auth(func=None, pass_through=None):
         # check that acctgroup and role are valid
         #
         acctgroup = kwargs.get('acctgroup')
-        role = j_module.default_voms_role(acctgroup)
+        role = jmod.default_voms_role(acctgroup)
         tokens = acctgroup.split('--ROLE--')
         if len(tokens) > 1:
             (acctgroup, role) = tokens[0:2]
@@ -345,8 +345,8 @@ def check_auth(func=None, pass_through=None):
                 pass
             if not uid:
                 uid = uid_from_client_dn()
-            if uid and (j_module.is_superuser_for_group(acctgroup, uid)
-                        or j_module.is_global_superuser(uid)):
+            if uid and (jmod.is_superuser_for_group(acctgroup, uid)
+                        or jmod.is_global_superuser(uid)):
                 return func(*args, **kwargs)
 
         logger.log(traceback=True)
@@ -404,7 +404,7 @@ def test():
             create_voms_proxy(
                 dns[group],
                 group,
-                j_module.default_voms_role(group))
+                jmod.default_voms_role(group))
         except authutils.AuthenticationError as e:
             logger.log("Unauthenticated DN='%s' acctgroup='%s'" %
                        (e.dn, e.acctgroup))

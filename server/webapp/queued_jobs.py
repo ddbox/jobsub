@@ -4,7 +4,7 @@ Purpose: performs condor_q for jobsub server
 Author: Nick Palumbo
 """
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
 
 from request_headers import get_client_dn

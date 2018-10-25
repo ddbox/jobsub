@@ -13,7 +13,7 @@
 
 """
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
 from authutils import get_voms
 from format import format_response

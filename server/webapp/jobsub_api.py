@@ -24,8 +24,8 @@ from util import mkdir_p
 from subprocessSupport import iexe_priv_cmd
 from threading import current_thread
 from format import format_response
-from JobsubConfigParser import JobsubConfigParser
-import jobsub.server.webapp.jobsub as j_module
+from jobsub.lib.parser import JobsubConfigParser
+import jmod
 
 
 class ApplicationInitializationError(Exception):
@@ -96,7 +96,7 @@ def create_statedir(log):
     /var/lib/jobsub/tmp         : rexbatch : 700
     """
 
-    jobsub_config = j_module.JobsubConfig()
+    jobsub_config = jmod.JobsubConfig()
     state_dir = jobsub_config.state_dir
     err = ''
     path = '%s:%s:%s' % (os.environ['PATH'], '.', '/opt/jobsub/server/webapp')

@@ -14,9 +14,9 @@
 
 import os
 import re
-import logger
+from jobsub.lib.logger import logger
 import logging
-import jobsub.server.webapp.jobsub as j_module
+import jmod
 import authutils
 
 from tempfile import NamedTemporaryFile
@@ -50,7 +50,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     """
     logger.log("dn %s username %s acctgroup %s acctrole %s age_limit %s" %
                (dn, username, acctgroup, acctrole, age_limit))
-    jobsubConfig = j_module.JobsubConfig()
+    jobsubConfig = jmod.JobsubConfig()
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     # Create the proxy as a temporary file in tmp_dir and perform a
     # privileged move on the file.
@@ -92,7 +92,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
                 logger.log(err)
                 raise authutils.OtherAuthError(err)
 
-            j_module.move_file_as_user(
+            jmod.move_file_as_user(
                 x509_tmp_fname, x509_cache_fname, username)
 
     except Exception as e:

@@ -38,7 +38,7 @@ fi
 
 if [ "$USE_UPS_JOBSUB_TOOLS" = "" ]; then
     export CONDOR_TMP=${WORKDIR}
-    export PYTHONPATH=/opt/jobsub/lib/groupsettings:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger:/opt/jobsub/lib:$PYTHONPATH
+    export PYTHONPATH=/opt/jobsub/lib/groupsettings:/opt/jobsub/lib/JobsubConfigParser:/opt/jobsub/lib/logger:/opt/jobsub/lib:/opt:$PYTHONPATH
     export PATH=/opt/jobsub/server/tools:$PATH
     DAG_CMD="dagsub"
 else

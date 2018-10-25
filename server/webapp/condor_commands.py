@@ -20,14 +20,14 @@ import socket
 import re
 from random import randint
 
-import JobsubConfigParser
+from jobsub.lib.parser import JobsubConfigParser
 import subprocessSupport
 from request_headers import get_client_dn
 
 if os.getenv('JOBSUB_USE_FAKE_LOGGER'):
-    import FakeLogger as logger
+    import jobsub.lib.logger.FakeLogger as logger
 else:
-    import logger
+    from jobsub.lib.logger import logger
 
 
 JOBSTATUS_DICT = {'unexpanded': 0, 'idle': 1, 'run': 2, 'running': 2,
@@ -460,7 +460,7 @@ def schedd_list(acctgroup=None, check_downtime=True):
 
 
 def condor_q_extra_flags():
-    jcp = JobsubConfigParser.JobsubConfigParser()
+    jcp = JobsubConfigParser()
     cqef = jcp.get('default', 'condor_q_extra_flags')
     if not cqef:
         cqef = ''
@@ -468,7 +468,7 @@ def condor_q_extra_flags():
 
 
 def downtime_constraint():
-    jcp = JobsubConfigParser.JobsubConfigParser()
+    jcp = JobsubConfigParser()
     dt_constraint = jcp.get('default', 'downtime_constraint')
     if not dt_constraint:
         dt_constraint = "InDownTime=!=True"
@@ -478,7 +478,7 @@ def downtime_constraint():
 def vo_constraint(acctgroup):
     if not acctgroup:
         return "True"
-    jcp = JobsubConfigParser.JobsubConfigParser()
+    jcp = JobsubConfigParser()
     voc = jcp.get(acctgroup, 'vo_constraint')
     if not voc:
         voc = """(SupportedVOList=?=undefined||stringlistmember("{0}",SupportedVOList))"""
@@ -489,7 +489,7 @@ def vo_constraint(acctgroup):
 
 
 def schedd_load_metric():
-    jcp = JobsubConfigParser.JobsubConfigParser()
+    jcp = JobsubConfigParser()
     metric = jcp.get('default', 'schedd_load_metric')
     if not metric:
         metric = "TotalRunningJobs"

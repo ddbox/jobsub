@@ -15,7 +15,7 @@
 
 """
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
 from request_headers import get_client_dn
 from format import format_response

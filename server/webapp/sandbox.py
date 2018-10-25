@@ -15,7 +15,7 @@
 """
 import os
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
 import re
 import time
@@ -25,9 +25,9 @@ from cherrypy.lib.static import serve_file
 from util import create_zipfile
 from util import create_tarfile
 from auth import check_auth
-import jobsub.server.webapp.jobsub as j_module
+import jmod
 from format import format_response
-from JobsubConfigParser import JobsubConfigParser
+from jobsub.lib.parser import JobsubConfigParser
 from condor_commands import constructFilter
 from condor_commands import iwd_condor_q
 from sqlite_commands import constructQuery
@@ -65,7 +65,7 @@ def make_sandbox_readable(workdir, username):
         os.path.realpath(workdir)
     ]
 
-    out, err = j_module.run_cmd_as_user(cmd, username, child_env=os.environ.copy())
+    out, err = jmod.run_cmd_as_user(cmd, username, child_env=os.environ.copy())
 
 
 def create_archive(zip_file, zip_path, job_id, out_format, partial=None):
@@ -121,7 +121,7 @@ class SandboxResource(object):
         cherrypy.response.timeout = timeout
         logger.log('sandbox timeout=%s' % cherrypy.response.timeout)
         logger.log('partial=%s' % partial)
-        jobsubConfig = j_module.JobsubConfig()
+        jobsubConfig = jmod.JobsubConfig()
         sbx_create_dir = jobsubConfig.commandPathAcctgroup(acctgroup)
         sbx_final_dir = jobsubConfig.commandPathUser(acctgroup,
                                                      request_uid)
@@ -197,9 +197,9 @@ class SandboxResource(object):
             #                              zip_file=zip_file)
             owner = os.path.basename(os.path.dirname(zip_path))
             if owner != request_uid:
-                if j_module.sandbox_readable_by_group(acctgroup) \
-                        or j_module.is_superuser_for_group(acctgroup, request_uid) \
-                        or j_module.is_global_superuser(request_uid):
+                if jmod.sandbox_readable_by_group(acctgroup) \
+                        or jmod.is_superuser_for_group(acctgroup, request_uid) \
+                        or jmod.is_global_superuser(request_uid):
                     make_sandbox_readable(zip_path, owner)
                 else:
                     err = "User %s is not allowed  to read %s, owned by %s." % (
@@ -266,7 +266,7 @@ class SandboxResource(object):
             if job_id is None:
                 raise
 
-            if j_module.is_supported_accountinggroup(acctgroup):
+            if jmod.is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'GET':
                     rcode = self.doGET(acctgroup, job_id, partial, **kwargs)
                 else:

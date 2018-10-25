@@ -12,7 +12,7 @@
 
 
 """
-import logger
+from jobsub.lib.logger import logger
 import logging
 import os
 import errno
@@ -25,7 +25,7 @@ import json
 import hashlib
 import StringIO
 import pwd
-import jobsub.server.webapp.jobsub as j_module
+import jmod
 import condor_commands
 import re
 import cherrypy
@@ -203,10 +203,10 @@ def doJobAction(acctgroup,
     except Exception:
         orig_user = request_headers.uid_from_client_dn()
     #orig_user = cmd_user
-    acctrole = j_module.default_voms_role(acctgroup)
+    acctrole = jmod.default_voms_role(acctgroup)
     child_env = os.environ.copy()
-    is_group_superuser = j_module.is_superuser_for_group(acctgroup, cmd_user)
-    is_global_superuser = j_module.is_global_superuser(cmd_user)
+    is_group_superuser = jmod.is_superuser_for_group(acctgroup, cmd_user)
+    is_global_superuser = jmod.is_global_superuser(cmd_user)
     if is_group_superuser or is_global_superuser:
         cmd_user = pwd.getpwuid(os.getuid())[0]
         child_env['X509_USER_CERT'] = child_env['JOBSUB_SERVER_X509_CERT']
@@ -308,21 +308,22 @@ def doJobAction(acctgroup,
         if hostname in schedd_name:
             try:
                 cmd = [
-                    j_module.condor_bin(condorCommands()[job_action]), '-totals',
+                    jmod.condor_bin(condorCommands()[job_action]), '-totals',
                     '-name', schedd_name,
                     '-pool', collector_host,
                     '-constraint', constraint
                 ]
                 if job_action == 'REMOVE' and kwargs.get('forcex'):
                     cmd.append('-forcex')
-                out, err = j_module.run_cmd_as_user(cmd,
+                out, err = jmod.run_cmd_as_user(cmd,
                                                   cmd_user,
                                                   child_env=child_env)
                 extra_err = err
                 # logger.log('cmd=%s'%cmd)
                 # logger.log('out=%s'%out)
                 # logger.log('err=%s'%err)
-            except Exception:                # TODO: We need to change the underlying library to return
+            except Exception:  
+                # TODO: We need to change the underlying library to return
                 #      stderr on failure rather than just raising exception
                 # however, as we are iterating over schedds we don't want
                 # to return error condition if one fails, we need to

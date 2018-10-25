@@ -11,9 +11,9 @@
 
 """
 
-import logger
+from jobsub.lib.logger import logger
 import logging
-import jobsub.server.webapp.jobsub as j_module
+import jmod
 import subprocessSupport
 import authutils
 
@@ -46,7 +46,7 @@ def get_gums_mapping(dn, fqan):
              dn: DN of proxy or cert trying to authenticate
            fqan: combination of acctgroup/role
     """
-    exe = j_module.get_jobsub_priv_exe()
+    exe = jmod.get_jobsub_priv_exe()
     # get rid of all the /CN=133990 and /CN=proxy for gums mapping
     # is this kosher?  how would a bad guy defeat this?
     #

@@ -12,7 +12,7 @@ import random
 import os
 import re
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
 import request_headers
 
@@ -25,11 +25,11 @@ from tempfile import NamedTemporaryFile
 from util import mkdir_p
 from auth import check_auth
 from authutils import x509_proxy_fname
-from jobsub.server.webapp.jobsub import is_supported_accountinggroup
-from jobsub.server.webapp.jobsub import JobsubConfig
-from jobsub.server.webapp.jobsub import execute_job_submit_wrapper
-from jobsub.server.webapp.jobsub import create_dir_as_user
-from jobsub.server.webapp.jobsub import move_file_as_user
+from jmod import is_supported_accountinggroup
+from jmod import JobsubConfig
+from jmod import execute_job_submit_wrapper
+from jmod import create_dir_as_user
+from jmod import move_file_as_user
 
 from format import format_response
 from dag_help import DAGHelpResource

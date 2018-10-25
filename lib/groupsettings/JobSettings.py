@@ -8,7 +8,10 @@ from JobUtils import JobUtils
 from optparse import OptionParser
 from optparse import OptionGroup
 from optparse import SUPPRESS_HELP
-import JobsubConfigParser
+try:
+    from jobsub.lib.parser import JobsubConfigParser
+except ImportError:
+    from JobsubConfigParser import JobsubConfigParser
 
 
 class UnknownInputError(Exception):
@@ -316,7 +319,7 @@ class JobSettings(object):
         self.settings['resource_list'].append(value)
 
     def initFileParser(self):
-        self.fileParser = JobsubConfigParser.JobsubConfigParser()
+        self.fileParser = JobsubConfigParser()
 
     def initCmdParser(self):
         """Initialize the groups in the cmdParser

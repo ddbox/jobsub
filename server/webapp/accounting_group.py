@@ -8,7 +8,7 @@
     Nick Palombo
 """
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
 import sys
 
@@ -16,7 +16,7 @@ from format import rel_link
 from request_headers import get_client_dn
 from job import AccountJobsResource
 from format import format_response
-from jobsub.server.webapp.jobsub import get_supported_accountinggroups
+from jmod import get_supported_accountinggroups
 from users import UsersResource
 from dropbox import DropboxResource
 from jobsub_help import JobsubHelpResource

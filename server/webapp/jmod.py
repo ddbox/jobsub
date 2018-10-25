@@ -1,4 +1,4 @@
-"""file: jobsub.py
+"""file: jmod.py
     Description:
         utility functions
 
@@ -20,13 +20,13 @@ import StringIO
 
 import subprocessSupport
 import condor_commands
-from JobsubConfigParser import JobsubConfigParser
+from jobsub.lib.parser import JobsubConfigParser
 from request_headers import get_client_dn
 
 if os.getenv('JOBSUB_USE_FAKE_LOGGER'):
     import FakeLogger as logger
 else:
-    import logger
+    from jobsub.lib.logger import logger
 
 
 def is_supported_accountinggroup(acctgroup):

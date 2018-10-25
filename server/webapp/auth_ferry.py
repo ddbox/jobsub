@@ -11,7 +11,7 @@
 
 """
 
-import logger
+from jobsub.lib.logger import logger
 import logging
 import authutils
 

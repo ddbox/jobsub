@@ -13,9 +13,9 @@
 
 """
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
-import jobsub.server.webapp.jobsub as j_module
+import jmod
 from format import format_response
 
 
@@ -30,7 +30,7 @@ class DropboxSizeResource(object):
         """
         acctgroup = kwargs.get('acctgroup')
         logger.log('acctgroup=%s' % acctgroup)
-        dropbox = j_module.get_dropbox_max_size(acctgroup)
+        dropbox = jmod.get_dropbox_max_size(acctgroup)
         if dropbox == False:
             cherrypy.response.status = 403
             return {'err': 'Dropbox size is NOT available for %s'

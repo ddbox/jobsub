@@ -6,7 +6,7 @@
         Dennis Box
 """
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
 
 from format import format_response

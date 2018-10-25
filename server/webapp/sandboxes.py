@@ -10,7 +10,7 @@
 
 """
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
 import os
 import time
@@ -20,11 +20,11 @@ import subprocessSupport
 from auth import check_auth
 from request_headers import get_client_dn
 from request_headers import uid_from_client_dn
-from jobsub.server.webapp.jobsub import get_command_path_root
-from jobsub.server.webapp.jobsub import sandbox_readable_by_group
-from jobsub.server.webapp.jobsub import sandbox_allowed_browsable_file_types
-from jobsub.server.webapp.jobsub import is_superuser_for_group
-from jobsub.server.webapp.jobsub import is_global_superuser
+from jmod import get_command_path_root
+from jmod import sandbox_readable_by_group
+from jmod import sandbox_allowed_browsable_file_types
+from jmod import is_superuser_for_group
+from jmod import is_global_superuser
 from sandbox import make_sandbox_readable
 from format import format_response, rel_link
 

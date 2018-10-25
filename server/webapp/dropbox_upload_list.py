@@ -12,9 +12,9 @@
 
 """
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
-import jobsub.server.webapp.jobsub as j_module
+import jmod
 from format import format_response
 
 
@@ -29,7 +29,7 @@ class DropboxUploadListResource(object):
         """
         acctgroup = kwargs.get('acctgroup')
         logger.log('acctgroup=%s' % acctgroup)
-        dropbox_uploads = j_module.get_dropbox_upload_list(acctgroup)
+        dropbox_uploads = jmod.get_dropbox_upload_list(acctgroup)
         if dropbox_uploads == False:
             cherrypy.response.status = 403
             return {'err': 'Dropbox location is NOT available for %s'

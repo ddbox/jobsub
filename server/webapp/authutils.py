@@ -21,9 +21,9 @@ import re
 import time
 import traceback
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
-import jobsub.server.webapp.jobsub as j_module
+import jmod
 import subprocessSupport
 import pwd
 import hashlib
@@ -34,7 +34,7 @@ import cStringIO
 
 from distutils import spawn
 from tempfile import NamedTemporaryFile
-from JobsubConfigParser import JobsubConfigParser
+from jobsub.lib.parser import JobsubConfigParser
 from request_headers import get_client_dn
 
 
@@ -662,7 +662,7 @@ def x509_proxy_fname(username, acctgroup, acctrole=None, dn=None):
     """generate file name to store x509 proxy
     """
     #creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-    jobsubConfig = j_module.JobsubConfig()
+    jobsubConfig = jmod.JobsubConfig()
     proxies_base_dir = jobsubConfig.proxies_dir
     creds_dir = os.path.join(proxies_base_dir, acctgroup)
     if not os.path.isdir(creds_dir):
@@ -670,7 +670,7 @@ def x509_proxy_fname(username, acctgroup, acctrole=None, dn=None):
     if acctrole:
         x509_cache_fname = os.path.join(creds_dir,
                                         'x509cc_%s_%s' % (username, acctrole))
-        if acctrole != j_module.default_voms_role(acctgroup):
+        if acctrole != jmod.default_voms_role(acctgroup):
             append_hashes = JobsubConfigParser().get(acctgroup, 'hash_nondefault_proxy')
             if append_hashes:
                 if not dn:
@@ -692,7 +692,7 @@ def refresh_krb5cc(username):
     """
     try:
         creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
-        jobsubConfig = j_module.JobsubConfig()
+        jobsubConfig = jmod.JobsubConfig()
         principal = """%s/batch/fifegrid@FNAL.GOV""" % username
         krb5cc_dir = jobsubConfig.krb5cc_dir
         keytab_fname = os.path.join(creds_base_dir, """%s.keytab""" % username)

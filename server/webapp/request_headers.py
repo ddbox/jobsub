@@ -4,7 +4,7 @@
    Author:  Dennis Box, dbox@fnal.gov
 """
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 
 
 def slashify(a_dn):

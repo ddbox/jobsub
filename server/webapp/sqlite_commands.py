@@ -12,7 +12,7 @@
 import sqlite3
 import re
 import socket
-import JobsubConfigParser
+from jobsub.lib.parser import JobsubConfigParser
 
 
 def fmtStr():
@@ -91,7 +91,7 @@ def constructQuery(acctgroup=None, uid=None, jobid=None,
 def iwd_jobsub_history(query, a_col='iwd'):
     hdr = sql_header()
     hostname = socket.gethostname()
-    p = JobsubConfigParser.JobsubConfigParser()
+    p = JobsubConfigParser()
     history_db = p.get(hostname, 'history_db')
     if not history_db:
         history_db = "/fife/local/scratch/history/%s/jobsub_history.db" %\
@@ -109,7 +109,7 @@ def iwd_jobsub_history(query, a_col='iwd'):
 def jobsub_history(query):
     hdr = sql_header()
     hostname = socket.gethostname()
-    p = JobsubConfigParser.JobsubConfigParser()
+    p = JobsubConfigParser()
     history_db = p.get(hostname, 'history_db')
     if not history_db:
         history_db = "/fife/local/scratch/history/%s/jobsub_history.db" %\

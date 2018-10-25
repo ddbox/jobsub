@@ -15,9 +15,9 @@
 
 """
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
-import jobsub.server.webapp.jobsub as j_module
+import jmod
 from format import format_response
 
 
@@ -34,7 +34,7 @@ class AuthMethodsResource(object):
         """
         acctgroup = kwargs.get('acctgroup')
         logger.log('acctgroup=%s' % acctgroup)
-        methods = j_module.get_authentication_methods(acctgroup)
+        methods = jmod.get_authentication_methods(acctgroup)
         if not auth_method:
             return {'out': methods}
         elif auth_method in methods:

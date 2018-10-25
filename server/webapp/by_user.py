@@ -6,12 +6,12 @@
         API /jobsub/acctgroups/<group_id>/jobs/user/<username>/<jobsubjobid>
 """
 import cherrypy
-import logger
+from jobsub.lib.logger import logger
 import logging
 from util import doDELETE
 from util import doPUT
 from auth import check_auth
-from jobsub.server.webapp.jobsub import is_supported_accountinggroup
+from jmod import is_supported_accountinggroup
 from format import format_response
 
 

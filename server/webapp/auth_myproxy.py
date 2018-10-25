@@ -17,15 +17,15 @@
 
 import os
 import traceback
-import logger
+from jobsub.lib.logger import logger
 import logging
-import jobsub.server.webapp.jobsub as j_module
+import jmod
 import subprocessSupport
 import authutils
 
 from distutils import spawn
 from tempfile import NamedTemporaryFile
-from JobsubConfigParser import JobsubConfigParser
+from jobsub.lib.parser import JobsubConfigParser
 
 
 def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
@@ -39,7 +39,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
                     forced refresh
     """
     #logger.log("dn %s , username %s , acctgroup %s, acctrole %s ,age_limit %s"%(dn, username, acctgroup, acctrole,age_limit))
-    jobsubConfig = j_module.JobsubConfig()
+    jobsubConfig = jmod.JobsubConfig()
 
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     x509_cache_fname = authutils.x509_proxy_fname(
@@ -53,7 +53,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     try:
         if authutils.needs_refresh(x509_cache_fname, age_limit):
 
-            if j_module.should_transfer_krb5cc(acctgroup):
+            if jmod.should_transfer_krb5cc(acctgroup):
                 authutils.refresh_krb5cc(username)
 
             p = JobsubConfigParser()
@@ -79,15 +79,15 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
             logger.log(cmd2)
             out2, err2 = subprocessSupport.iexe_cmd(cmd2)
             if not acctrole:
-                acctrole = j_module.default_voms_role(acctgroup)
-            sub_group_pattern = j_module.sub_group_pattern(acctgroup)
+                acctrole = jmod.default_voms_role(acctgroup)
+            sub_group_pattern = jmod.sub_group_pattern(acctgroup)
             search_pat = """%s/Role=%s/Capability""" % (
                 sub_group_pattern, acctrole)
 
             if (search_pat in out2) and ('VO' in out2):
                 logger.log('found  %s , authenticated successfully' %
                            (search_pat))
-                j_module.move_file_as_user(
+                jmod.move_file_as_user(
                     x509_tmp_fname, x509_cache_fname, username)
             else:
                 logger.log('failed to find %s in %s' % (search_pat, out2))
