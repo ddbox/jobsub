@@ -11,7 +11,7 @@ import logging
 from util import doDELETE
 from util import doPUT
 from auth import check_auth
-from jobsub import is_supported_accountinggroup
+from jobsub.server.webapp.jobsub import is_supported_accountinggroup
 from format import format_response
 
 
@@ -60,7 +60,7 @@ class AccountJobsByUserResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             cherrypy.response.status = 500
             err = 'Exception on AccountJobsByUserResource.index'
             logger.log(err, severity=logging.ERROR, traceback=True)

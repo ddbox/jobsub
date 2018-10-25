@@ -16,7 +16,7 @@ from format import rel_link
 from request_headers import get_client_dn
 from job import AccountJobsResource
 from format import format_response
-from jobsub import get_supported_accountinggroups
+from jobsub.server.webapp.jobsub import get_supported_accountinggroups
 from users import UsersResource
 from dropbox import DropboxResource
 from jobsub_help import JobsubHelpResource
@@ -102,7 +102,7 @@ class AccountingGroupsResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on AccountingGroupsResource.index: %s' %\
                 sys.exc_info()[1]
             cherrypy.response.status = 500

@@ -17,8 +17,7 @@ import socket
 from auth import check_auth
 from request_headers import get_client_dn
 from format import format_response
-from jobsub import get_dropbox_path_root
-from jobsub import get_dropbox_location
+from jobsub.server.webapp.jobsub import get_dropbox_path_root
 from util import mkdir_p
 from util import digest_for_file
 
@@ -44,9 +43,9 @@ class DropboxResource(object):
     def doPOST(self, acctgroup, kwargs):
         """
         Catch older clients ( < v1.2.6 ) which try to up load to dropbox on
-        the jobsub server.  
+        the jobsub server.
         """
-        err="""
+        err = """
         Unsupported client/server combination.  The dropbox:// feature
         was moved from the jobsub_server to dcache  starting with  v1_2_6.
         If you want to use this feature use  jobsub_client v1_2_6
@@ -54,13 +53,11 @@ class DropboxResource(object):
         """
         raise Exception(err)
 
-
-
     def doPOST_OLD(self, acctgroup, kwargs):
         """ Upload files to Dropbox service. Return JSON object
             describing location of files.
             API is /jobsub/acctgroups/<group_id>/dropbox/
-            not used 
+            not used
         """
         box_id = str(uuid.uuid4())
         dropbox_path_root = get_dropbox_path_root()
@@ -171,7 +168,7 @@ class DropboxResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rcode = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on DropboxResource.index:%s' % sys.exc_info()[1]
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)

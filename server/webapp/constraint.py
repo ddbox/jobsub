@@ -21,7 +21,7 @@ import logging
 import util
 
 from auth import check_auth
-from jobsub import is_supported_accountinggroup
+from jobsub.server.webapp.jobsub import is_supported_accountinggroup
 from format import format_response
 from condor_commands import ui_condor_q
 
@@ -77,7 +77,7 @@ class JobActionByConstraintResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rcode = {'err': err}
-        except:
+        except Exception:
             cherrypy.response.status = 500
             err = 'Exception on JobActionByConstraintResource.index'
             logger.log(err, severity=logging.ERROR, traceback=True)

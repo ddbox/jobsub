@@ -25,7 +25,7 @@ import json
 import hashlib
 import StringIO
 import pwd
-import jobsub
+import jobsub.server.webapp.jobsub as j_module
 import condor_commands
 import re
 import cherrypy
@@ -93,13 +93,14 @@ def mkdir_p(path):
             raise
 
 
-
-
 def zipdir(path, zipf, job_id):
     for root, dirs, files in os.walk(path, followlinks=False):
         for file in files:
             if job_id:
-                zipf.write(os.path.join(root, file), os.path.join(job_id, file))
+                zipf.write(
+                    os.path.join(
+                        root, file), os.path.join(
+                        job_id, file))
             else:
                 zipf.write(os.path.join(root, file))
 
@@ -133,7 +134,7 @@ def create_tarfile(tar_file, tar_path, job_id=None, partial=None):
             else:
                 tar.add(f1, fname)
 
-        except:
+        except Exception:
             logger.log('failed to add %s to %s ' %
                        (fname, tar_file), severity=logging.ERROR)
             logger.log('failed to add %s to %s ' % (fname, tar_file),
@@ -196,21 +197,22 @@ def doJobAction(acctgroup,
     """
 
     scheddList = []
+    cmd_user = request_headers.uid_from_client_dn()
     try:
-        cmd_user = cherrypy.request.username
-    except:
-        cmd_user = request_headers.uid_from_client_dn()
-    orig_user = cmd_user
-    acctrole = jobsub.default_voms_role(acctgroup)
+        orig_user = cherrypy.request.username
+    except Exception:
+        orig_user = request_headers.uid_from_client_dn()
+    #orig_user = cmd_user
+    acctrole = j_module.default_voms_role(acctgroup)
     child_env = os.environ.copy()
-    is_group_superuser = jobsub.is_superuser_for_group(acctgroup, cmd_user)
-    is_global_superuser = jobsub.is_global_superuser(cmd_user)
+    is_group_superuser = j_module.is_superuser_for_group(acctgroup, cmd_user)
+    is_global_superuser = j_module.is_global_superuser(cmd_user)
     if is_group_superuser or is_global_superuser:
         cmd_user = pwd.getpwuid(os.getuid())[0]
         child_env['X509_USER_CERT'] = child_env['JOBSUB_SERVER_X509_CERT']
         child_env['X509_USER_KEY'] = child_env['JOBSUB_SERVER_X509_KEY']
         msg = "user %s will perform %s  as queue_superuser %s" %\
-                   (orig_user, job_action, cmd_user)
+            (orig_user, job_action, cmd_user)
         logger.log(msg)
 
     else:
@@ -234,7 +236,7 @@ def doJobAction(acctgroup,
             constraint = 'True'
         else:
             constraint = cgroup
-        #job_id is a jobsubjobid
+        # job_id is a jobsubjobid
         # Split the job_id to get cluster_id and proc_id
         stuff = job_id.split('@')
         schedd_name = '@'.join(stuff[1:])
@@ -250,7 +252,7 @@ def doJobAction(acctgroup,
         else:
             constraint = cgroup
 
-        constraint = """%s && (Owner =?= "%s")""" % (constraint,user)
+        constraint = """%s && (Owner =?= "%s")""" % (constraint, user)
         scheddList = condor_commands.schedd_list(acctgroup)
     else:
         err = "Failed to supply constraint, job_id or uid, "
@@ -260,13 +262,14 @@ def doJobAction(acctgroup,
         return {'err': err}
 
     if is_group_superuser or is_global_superuser:
-        msg = '[user: %s su %s] %s jobs owned by %s with constraint(%s)'%\
+        msg = '[user: %s su %s] %s jobs owned by %s with constraint(%s)' %\
             (orig_user, cmd_user, job_action, user, constraint)
         logger.log(msg)
         logger.log(msg, logfile='condor_commands')
         logger.log(msg, logfile='condor_superuser')
 
-    if user and user != cmd_user and not (is_group_superuser or is_global_superuser):
+    if user and user != cmd_user and not (
+            is_group_superuser or is_global_superuser):
         err = '%s is not allowed to perform %s on jobs owned by %s ' %\
             (cmd_user, job_action, user)
         logger.log(err)
@@ -278,17 +281,18 @@ def doJobAction(acctgroup,
     else:
         if is_group_superuser:
             if constraint and (acctgroup not in constraint):
-                constraint = constraint + """&&(regexp("group_%s.*",AccountingGroup))""" % acctgroup
-        msg = '[user: %s] %s  jobs with constraint (%s)' %\
+                constraint = constraint + \
+                    r"""&&(regexp("group_%s.*",AccountingGroup))""" % acctgroup
+        msg = r'[user: %s] %s  jobs with constraint (%s)' %\
             (cmd_user, job_action, constraint)
         logger.log(msg)
         logger.log(msg, logfile='condor_commands')
 
     out = err = ''
-    expr = '.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+).*'
-    expr += '(\s+)(\d+)(\s+Permission Denied).*'
-    expr2 = '.*ailed to connect*'
-    expr3 = '.*all jobs matching constraint*'
+    expr = r'.*(\d+)(\s+Succeeded,\s+)(\d+)(\s+Failed,\s+).*'
+    expr += r'(\s+)(\d+)(\s+Permission Denied).*'
+    expr2 = r'.*ailed to connect*'
+    expr3 = r'.*all jobs matching constraint*'
     regex = re.compile(expr)
     regex2 = re.compile(expr2)
     regex3 = re.compile(expr3)
@@ -304,22 +308,21 @@ def doJobAction(acctgroup,
         if hostname in schedd_name:
             try:
                 cmd = [
-                    jobsub.condor_bin(condorCommands()[job_action]), '-totals',
+                    j_module.condor_bin(condorCommands()[job_action]), '-totals',
                     '-name', schedd_name,
                     '-pool', collector_host,
                     '-constraint', constraint
                 ]
                 if job_action == 'REMOVE' and kwargs.get('forcex'):
                     cmd.append('-forcex')
-                out, err = jobsub.run_cmd_as_user(cmd,
+                out, err = j_module.run_cmd_as_user(cmd,
                                                   cmd_user,
                                                   child_env=child_env)
                 extra_err = err
-                #logger.log('cmd=%s'%cmd)
-                #logger.log('out=%s'%out)
-                #logger.log('err=%s'%err)
-            except:
-                # TODO: We need to change the underlying library to return
+                # logger.log('cmd=%s'%cmd)
+                # logger.log('out=%s'%out)
+                # logger.log('err=%s'%err)
+            except Exception:                # TODO: We need to change the underlying library to return
                 #      stderr on failure rather than just raising exception
                 # however, as we are iterating over schedds we don't want
                 # to return error condition if one fails, we need to
@@ -336,7 +339,7 @@ def doJobAction(acctgroup,
                     logger.log(msg, severity=logging.ERROR,
                                logfile='condor_superuser')
                 extra_err = extra_err + err
-                #return {'out': out, 'err': extra_err}
+                # return {'out': out, 'err': extra_err}
             out2 = StringIO.StringIO('%s\n' % out.rstrip('\n')).readlines()
             for line in out2:
                 if regex.match(line):
@@ -346,16 +349,16 @@ def doJobAction(acctgroup,
                 if regex.match(line):
                     ret_out += line.replace('STDOUT:', '')
                     grps = regex.match(line)
-                    logger.log('condor_stdout=%s succeeded=%s failed=%s denied=%s'%\
-                               (grps.group(),grps.group(1),grps.group(3),grps.group(6)))
+                    logger.log('condor_stdout=%s succeeded=%s failed=%s denied=%s' %
+                               (grps.group(), grps.group(1), grps.group(3), grps.group(6)))
                     if grps.group(1) == '0':
-                        #0 Succeeded, return error
+                        # 0 Succeeded, return error
                         cherrypy.response.status = 500
                     if grps.group(3) != '0':
-                        #non-0 Failed, return error
+                        # non-0 Failed, return error
                         cherrypy.response.status = 500
                     if grps.group(6) != '0':
-                        #non-0 Permission Denied, return error
+                        # non-0 Permission Denied, return error
                         cherrypy.response.status = 500
                 if regex2.match(line):
                     ret_err += line

@@ -17,7 +17,7 @@ import socket
 import sys
 import subprocessSupport
 from JobsubConfigParser import JobsubConfigParser
-from jobsub import is_supported_accountinggroup
+from jobsub.server.webapp.jobsub import is_supported_accountinggroup
 from format import format_response
 from request_headers import get_client_dn
 
@@ -42,7 +42,7 @@ class ConfiguredSitesResource(object):
                     pool = ''
                 try:
                     exclude_list = p.get(acctgroup, 'site_ignore_list')
-                except:
+                except Exception:
                     exclude_list = p.get(p.submit_host(), 'site_ignore_list')
                 cmd = """condor_status %s  -any """ % pool
                 cmd += """-constraint '(glideinmytype=="glideresource")&&"""
@@ -60,7 +60,7 @@ class ConfiguredSitesResource(object):
                         logger.log('adding %s' % dat)
                         site_list.append(dat)
 
-            except:
+            except Exception:
                 logger.log("%s" % sys.exc_info()[1], severity=logging.ERROR)
                 logger.log("%s" % sys.exc_info()[
                            1], severity=logging.ERROR, logfile='error')
@@ -101,7 +101,7 @@ class ConfiguredSitesResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on ConfiguredSitesResource.index'
             logger.log(err, severity=logging.ERROR, traceback=True)
             logger.log(err, severity=logging.ERROR,

@@ -19,7 +19,7 @@ import os
 import traceback
 import logger
 import logging
-import jobsub
+import jobsub.server.webapp.jobsub as j_module
 import subprocessSupport
 import authutils
 
@@ -39,7 +39,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
                     forced refresh
     """
     #logger.log("dn %s , username %s , acctgroup %s, acctrole %s ,age_limit %s"%(dn, username, acctgroup, acctrole,age_limit))
-    jobsubConfig = jobsub.JobsubConfig()
+    jobsubConfig = j_module.JobsubConfig()
 
     creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     x509_cache_fname = authutils.x509_proxy_fname(
@@ -53,7 +53,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
     try:
         if authutils.needs_refresh(x509_cache_fname, age_limit):
 
-            if jobsub.should_transfer_krb5cc(acctgroup):
+            if j_module.should_transfer_krb5cc(acctgroup):
                 authutils.refresh_krb5cc(username)
 
             p = JobsubConfigParser()
@@ -79,15 +79,15 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
             logger.log(cmd2)
             out2, err2 = subprocessSupport.iexe_cmd(cmd2)
             if not acctrole:
-                acctrole = jobsub.default_voms_role(acctgroup)
-            sub_group_pattern = jobsub.sub_group_pattern(acctgroup)
+                acctrole = j_module.default_voms_role(acctgroup)
+            sub_group_pattern = j_module.sub_group_pattern(acctgroup)
             search_pat = """%s/Role=%s/Capability""" % (
                 sub_group_pattern, acctrole)
 
             if (search_pat in out2) and ('VO' in out2):
                 logger.log('found  %s , authenticated successfully' %
                            (search_pat))
-                jobsub.move_file_as_user(
+                j_module.move_file_as_user(
                     x509_tmp_fname, x509_cache_fname, username)
             else:
                 logger.log('failed to find %s in %s' % (search_pat, out2))
@@ -103,7 +103,7 @@ def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):
 
                 raise authutils.OtherAuthError(err)
 
-    except:
+    except Exception:
         err = traceback.format_exc()
         logger.log(err, severity=logging.ERROR)
         logger.log(err, severity=logging.ERROR, logfile='error')

@@ -25,11 +25,11 @@ from tempfile import NamedTemporaryFile
 from util import mkdir_p
 from auth import check_auth
 from authutils import x509_proxy_fname
-from jobsub import is_supported_accountinggroup
-from jobsub import JobsubConfig
-from jobsub import execute_job_submit_wrapper
-from jobsub import create_dir_as_user
-from jobsub import move_file_as_user
+from jobsub.server.webapp.jobsub import is_supported_accountinggroup
+from jobsub.server.webapp.jobsub import JobsubConfig
+from jobsub.server.webapp.jobsub import execute_job_submit_wrapper
+from jobsub.server.webapp.jobsub import create_dir_as_user
+from jobsub.server.webapp.jobsub import move_file_as_user
 
 from format import format_response
 from dag_help import DAGHelpResource
@@ -73,7 +73,7 @@ class DagResource(object):
                 uname = None
                 try:
                     uname = cherrypy.request.username
-                except:
+                except Exception:
                     uname = request_headers.uid_from_client_dn()
 
                 command_path_user = jscfg.commandPathUser(acctgroup,
@@ -121,7 +121,7 @@ class DagResource(object):
 
                     logger.log('before: jobsub_args = %s' % jobsub_args)
                     logger.log("cf_path_w_space='%s'" % cf_path_w_space)
-                    command_tag = "\@(\S*)%s" % jobsub_command.filename
+                    command_tag = r"\@(\S*)%s" % jobsub_command.filename
                     logger.log("command_tag='%s'" % command_tag)
                     _str = '"re.sub(command_tag, cf_path_w_space, jobsub_args)"'
                     logger.log('executing:%s' % _str)
@@ -176,8 +176,8 @@ class DagResource(object):
         try:
             cherrypy.request.role = kwargs.get('role')
             cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
-            #cherrypy.request.username should be set by @check_auth using GUMS
-            #but double check
+            # cherrypy.request.username should be set by @check_auth using GUMS
+            # but double check
             if not hasattr(cherrypy.request, 'username') or \
                     not cherrypy.request.username:
                 cherrypy.request.username = kwargs.get('username')
@@ -196,7 +196,7 @@ class DagResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rcode = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on DagResource.index'
             cherrypy.response.status = 500
             logger.log(err, severity=logging.ERROR, traceback=True)

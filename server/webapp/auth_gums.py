@@ -13,7 +13,7 @@
 
 import logger
 import logging
-import jobsub
+import jobsub.server.webapp.jobsub as j_module
 import subprocessSupport
 import authutils
 
@@ -32,7 +32,7 @@ def authenticate(dn, acctgroup, acctrole):
         logger.log("GUMS mapped dn '%s' fqan '%s' to '%s'" %
                    (dn, fqan, username))
         return username
-    except:
+    except Exception:
         err = "GUMS mapping for the dn '%s' fqan '%s' failed" % (dn, fqan)
         logger.log(err, traceback=True, severity=logging.ERROR)
         logger.log(err, traceback=True,
@@ -46,7 +46,7 @@ def get_gums_mapping(dn, fqan):
              dn: DN of proxy or cert trying to authenticate
            fqan: combination of acctgroup/role
     """
-    exe = jobsub.get_jobsub_priv_exe()
+    exe = j_module.get_jobsub_priv_exe()
     # get rid of all the /CN=133990 and /CN=proxy for gums mapping
     # is this kosher?  how would a bad guy defeat this?
     #
@@ -56,7 +56,7 @@ def get_gums_mapping(dn, fqan):
     logger.log(cmd)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd)
-    except:
+    except Exception:
         err = 'Error running command %s: %s' % (cmd, err)
         logger.log(err, severity=logging.ERROR)
         logger.log(err, severity=logging.ERROR, logfile='error')

@@ -20,11 +20,11 @@ import subprocessSupport
 from auth import check_auth
 from request_headers import get_client_dn
 from request_headers import uid_from_client_dn
-from jobsub import get_command_path_root
-from jobsub import sandbox_readable_by_group
-from jobsub import sandbox_allowed_browsable_file_types
-from jobsub import is_superuser_for_group
-from jobsub import is_global_superuser
+from jobsub.server.webapp.jobsub import get_command_path_root
+from jobsub.server.webapp.jobsub import sandbox_readable_by_group
+from jobsub.server.webapp.jobsub import sandbox_allowed_browsable_file_types
+from jobsub.server.webapp.jobsub import is_superuser_for_group
+from jobsub.server.webapp.jobsub import is_global_superuser
 from sandbox import make_sandbox_readable
 from format import format_response, rel_link
 
@@ -47,9 +47,10 @@ class SandboxesResource(object):
             suffix = ".%s" % file_id.split('.')[-1]
             if suffix in allowed_list:
                 cherrypy.request.output_format = 'pre'
-                cmd = "find  %s/%s/%s/%s/%s -type f -mindepth 0 -maxdepth 0 -exec cat -u {} \;" %\
+                cmd = r"find  %s/%s/%s/%s/%s -type f " %\
                     (command_path_root, cherrypy.request.acctgroup,
                      user_id, job_id, file_id)
+                cmd += r"-mindepth 0 -maxdepth 0 -exec cat -u {} \;" 
             else:
                 return {'out': 'you do not have permission to browse %s' % file_id}
         elif job_id:
@@ -65,7 +66,7 @@ class SandboxesResource(object):
             logger.log(cmd)
             cmd_out, cmd_err = subprocessSupport.iexe_cmd(cmd)
 
-        except:
+        except Exception:
             err = "No sandboxes found for user %s accounting group %s" %\
                 (user_id, cherrypy.request.acctgroup)
             logger.log(err)
@@ -101,8 +102,7 @@ class SandboxesResource(object):
                         t = os.path.getmtime(fp)
                         itm = (rel_link(f), t)
                         filelist.append(itm)
-                    except:
-
+                    except Exception:
                         logger.log("%s" % sys.exc_info()[1],
                                    severity=logging.ERROR)
 
@@ -137,7 +137,7 @@ class SandboxesResource(object):
             else:
                 try:
                     requestor = cherrypy.request.username
-                except:
+                except Exception:
                     requestor = None
                 if not requestor:
                     requestor = uid_from_client_dn()
@@ -149,8 +149,8 @@ class SandboxesResource(object):
             file_id = kwargs.get('file_id')
             if user_id != requestor:
                 allowed = sandbox_readable_by_group(acctgroup) or \
-                          is_superuser_for_group(acctgroup,requestor) or \
-                          is_global_superuser(requestor)
+                    is_superuser_for_group(acctgroup, requestor) or \
+                    is_global_superuser(requestor)
                 if not allowed:
                     if not user_id:
                         user_id = 'other user'
@@ -177,7 +177,7 @@ class SandboxesResource(object):
                 logger.log(err, severity=logging.ERROR)
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 rc = {'err': err}
-        except:
+        except Exception:
             err = 'Exception on SandboxesResource.index'
             cherrypy.response.status = 500
             logger.log(err, traceback=True, severity=logging.ERROR)

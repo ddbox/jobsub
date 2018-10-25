@@ -15,16 +15,14 @@ import util
 from datetime import datetime
 from shutil import copyfileobj
 
+
 from tempfile import NamedTemporaryFile
 from auth import check_auth
 from authutils import x509_proxy_fname
-from jobsub import is_supported_accountinggroup
-from jobsub import execute_job_submit_wrapper
-from jobsub import JobsubConfig
-from jobsub import create_dir_as_user
-from jobsub import move_file_as_user
+import jobsub.server.webapp.jobsub as j_module
 from format import format_response
-from condor_commands import constructFilter, ui_condor_q
+from condor_commands import constructFilter
+from condor_commands import ui_condor_q
 from sandbox import SandboxResource
 from history import HistoryResource
 from dag import DagResource
@@ -95,7 +93,7 @@ class AccountJobsResource(object):
         if job_id is None:
             pnfs_list = []
             child_env = os.environ.copy()
-            jobsubConfig = JobsubConfig()
+            jobsubConfig = j_module.JobsubConfig()
             logger.log('job.py:doPost:kwargs: %s' % kwargs)
             jobsub_args = kwargs.get('jobsub_args_base64')
             jobsub_client_version = kwargs.get('jobsub_client_version')
@@ -109,7 +107,7 @@ class AccountJobsResource(object):
                 for arg in jobsub_args.split():
                     if '/pnfs/' in arg:
                         pnfs_list.append(arg)
-                        #logger.log(arg,logfile='dropbox')
+                        # logger.log(arg,logfile='dropbox')
                 jobsub_command = kwargs.get('jobsub_command')
                 role = kwargs.get('role')
                 logger.log('job.py:doPost:jobsub_command %s' %
@@ -135,7 +133,7 @@ class AccountJobsResource(object):
                 child_env['X509_USER_PROXY'] = x509_proxy_fname(cherrypy.request.username,
                                                                 acctgroup, role)
                 # Create the job's working directory as user
-                create_dir_as_user(command_path_user, workdir_id,
+                j_module.create_dir_as_user(command_path_user, workdir_id,
                                    cherrypy.request.username, mode='755')
                 if jobsub_command is not None:
                     command_file_path = os.path.join(command_path,
@@ -152,7 +150,7 @@ class AccountJobsResource(object):
                     copyfileobj(jobsub_command.file, tmp_cmd_fd)
 
                     tmp_cmd_fd.close()
-                    move_file_as_user(
+                    j_module.move_file_as_user(
                         tmp_cmd_fd.name, command_file_path, cherrypy.request.username)
                     # with open(command_file_path, 'wb') as dst_file:
                     #    copyfileobj(jobsub_command.file, dst_file)
@@ -160,13 +158,13 @@ class AccountJobsResource(object):
                     # replace the command file name in the arguments with
                     # the path on the local machine.
                     jobsub_args = re.sub('^@', ' @', jobsub_args)
-                    command_tag = '\ \@(\S*)%s' % jobsub_command.filename
+                    command_tag = r'\ \@(\S*)%s' % jobsub_command.filename
                     jobsub_args = re.sub(
                         command_tag, cf_path_w_space, jobsub_args)
                     logger.log('jobsub_args (subbed): %s' % jobsub_args)
 
                 jobsub_args = jobsub_args.split(' ')
-                rcode = execute_job_submit_wrapper(
+                rcode = j_module.execute_job_submit_wrapper(
                     acctgroup=acctgroup, username=cherrypy.request.username,
                     jobsub_args=jobsub_args, workdir_id=workdir_id,
                     role=role, jobsub_client_version=jobsub_client_version,
@@ -180,7 +178,9 @@ class AccountJobsResource(object):
                             parts = line.strip().split()
                             jid = parts[-1]
                             for pnfs in pnfs_list:
-                                logger.log("%s %s " % (jid, pnfs), logfile='dropbox')
+                                logger.log(
+                                    "%s %s " %
+                                    (jid, pnfs), logfile='dropbox')
                 if rcode.get('err'):
                     logger.log(rcode['err'], severity=logging.ERROR)
                     logger.log(rcode['err'], severity=logging.ERROR,
@@ -219,7 +219,7 @@ class AccountJobsResource(object):
                 cherrypy.request.username = kwargs.get('username')
             if kwargs.get('voms_proxy'):
                 cherrypy.request.vomsProxy = kwargs.get('voms_proxy')
-            if is_supported_accountinggroup(acctgroup):
+            if j_module.is_supported_accountinggroup(acctgroup):
                 if cherrypy.request.method == 'POST':
                     # create job
                     rcode = self.doPOST(acctgroup, job_id, kwargs)
@@ -244,7 +244,7 @@ class AccountJobsResource(object):
                 logger.log(err, severity=logging.ERROR, logfile='error')
                 cherrypy.response.status = 404
                 rcode = {'err': err}
-        except:
+        except Exception:
             cherrypy.response.status = 500
             err = 'Exception on AccountJobsResource.index'
             logger.log(err, severity=logging.ERROR, traceback=True)
