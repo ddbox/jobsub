@@ -1,8 +1,11 @@
 #!/bin/env python
 # $Id$
 
-from groupsettings import JobSettings, MinervaSettings, NovaSettings
-from groupsettings import CdfSettings, MinosSettings
+from jobsub.lib.groupsettings import JobSettings
+from jobsub.lib.groupsettings import MinervaSettings
+from jobsub.lib.groupsettings import NovaSettings
+from jobsub.lib.groupsettings import CdfSettings
+from jobsub.lib.groupsettings import MinosSettings
 import getopt
 import sys
 import os
