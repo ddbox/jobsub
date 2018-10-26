@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 """file: jmod.py
     Description:
         utility functions
@@ -17,11 +18,10 @@ import pipes
 import socket
 from distutils import spawn
 import StringIO
-
-import subprocessSupport
-import condor_commands
 from jobsub.lib.parser import JobsubConfigParser
-from request_headers import get_client_dn
+from . import subprocessSupport
+from . import condor_commands
+from .request_headers import get_client_dn
 
 if os.getenv('JOBSUB_USE_FAKE_LOGGER'):
     import FakeLogger as logger

@@ -15,13 +15,13 @@
 
 """
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
-from request_headers import get_client_dn
-from format import format_response
-from condor_commands import ui_condor_q, constructFilter
-#from history import HistoryResource
-from queued_jobs import QueuedJobsResource
+from jobsub.lib.logger import logger
+from .request_headers import get_client_dn
+from .format import format_response
+from .condor_commands import ui_condor_q
+from .condor_commands import constructFilter
+from .queued_jobs import QueuedJobsResource
 
 
 @cherrypy.popargs('user_id')

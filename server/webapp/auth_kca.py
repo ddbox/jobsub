@@ -14,12 +14,12 @@
 
 import os
 import re
-from jobsub.lib.logger import logger
 import logging
-import jmod
-import authutils
-
 from tempfile import NamedTemporaryFile
+from jobsub.lib.logger import logger
+from . import jmod
+from . import authutils
+
 
 
 def authenticate(dn):

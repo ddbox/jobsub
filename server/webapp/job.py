@@ -1,3 +1,4 @@
+#from __future__ import absolute_import
 """Module: job
    Purpose: submit,query,hold,release a single job via URL
             /jobsub/acctgroups/<group_id>/jobs/
@@ -8,29 +9,29 @@ import random
 import os
 import re
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
-import util
 
 from datetime import datetime
 from shutil import copyfileobj
-
-
 from tempfile import NamedTemporaryFile
-from auth import check_auth
-from authutils import x509_proxy_fname
-import jmod
-from format import format_response
-from condor_commands import constructFilter
-from condor_commands import ui_condor_q
-from sandbox import SandboxResource
-from history import HistoryResource
-from dag import DagResource
-from queued_outformat import QueuedFormattedOutputResource
-from queued_jobstatus import QueuedJobStatusResource
-from by_user import AccountJobsByUserResource
-from forcex_jobid import RemoveForcexByJobIDResource
-from constraint import JobActionByConstraintResource
+
+
+from jobsub.lib.logger import logger
+import jobsub.server.webapp.jmod as jmod
+from . import util
+from .auth import check_auth
+from .authutils import x509_proxy_fname
+from .format import format_response
+from .condor_commands import constructFilter
+from .condor_commands import ui_condor_q
+from .sandbox import SandboxResource
+from .history import HistoryResource
+from .dag import DagResource
+from .queued_outformat import QueuedFormattedOutputResource
+from .queued_jobstatus import QueuedJobStatusResource
+from .by_user import AccountJobsByUserResource
+from .forcex_jobid import RemoveForcexByJobIDResource
+from .constraint import JobActionByConstraintResource
 
 
 @cherrypy.popargs('job_id')

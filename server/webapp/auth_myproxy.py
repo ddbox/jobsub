@@ -17,15 +17,16 @@
 
 import os
 import traceback
-from jobsub.lib.logger import logger
 import logging
-import jmod
-import subprocessSupport
-import authutils
-
 from distutils import spawn
 from tempfile import NamedTemporaryFile
+
+from jobsub.lib.logger import logger
 from jobsub.lib.parser import JobsubConfigParser
+
+from . import jmod
+from . import subprocessSupport
+from . import authutils
 
 
 def authorize(dn, username, acctgroup, acctrole=None, age_limit=3600):

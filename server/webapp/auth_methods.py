@@ -15,10 +15,10 @@
 
 """
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
-import jmod
-from format import format_response
+from jobsub.lib.logger import logger
+from . import jmod
+from .format import format_response
 
 
 @cherrypy.popargs('auth_method')

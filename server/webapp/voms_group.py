@@ -13,10 +13,10 @@
 
 """
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
-from authutils import get_voms
-from format import format_response
+from jobsub.lib.logger import logger
+from .authutils import get_voms
+from .format import format_response
 
 
 class VOMSGroupResource(object):

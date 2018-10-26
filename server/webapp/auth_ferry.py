@@ -11,9 +11,9 @@
 
 """
 
-from jobsub.lib.logger import logger
 import logging
-import authutils
+from jobsub.lib.logger import logger
+from . import authutils
 
 
 def authenticate(dn, acctgroup, acctrole):

@@ -11,11 +11,11 @@
 
 """
 
-from jobsub.lib.logger import logger
 import logging
-import jmod
-import subprocessSupport
-import authutils
+from jobsub.lib.logger import logger
+from . import jmod
+from . import subprocessSupport
+from . import authutils
 
 
 def authenticate(dn, acctgroup, acctrole):

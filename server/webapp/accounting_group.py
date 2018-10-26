@@ -1,3 +1,4 @@
+#from __future__ import absolute_import
 """Module:
     accounting_group
    Purpose:
@@ -8,25 +9,25 @@
     Nick Palombo
 """
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
 import sys
 
-from format import rel_link
-from request_headers import get_client_dn
-from job import AccountJobsResource
-from format import format_response
-from jmod import get_supported_accountinggroups
-from users import UsersResource
-from dropbox import DropboxResource
-from jobsub_help import JobsubHelpResource
-from sandboxes import SandboxesResource
-from configured_sites import ConfiguredSitesResource
-from auth_methods import AuthMethodsResource
-from dropbox_location import DropboxLocationResource
-from dropbox_size import DropboxSizeResource
-from dropbox_upload_list import DropboxUploadListResource
-from voms_group import VOMSGroupResource
+from jobsub.lib.logger import logger
+from .format import rel_link
+from .format import format_response
+from .request_headers import get_client_dn
+from .job import AccountJobsResource
+from .jmod import get_supported_accountinggroups
+from .users import UsersResource
+from .dropbox import DropboxResource
+from .jobsub_help import JobsubHelpResource
+from .sandboxes import SandboxesResource
+from .configured_sites import ConfiguredSitesResource
+from .auth_methods import AuthMethodsResource
+from .dropbox_location import DropboxLocationResource
+from .dropbox_size import DropboxSizeResource
+from .dropbox_upload_list import DropboxUploadListResource
+from .voms_group import VOMSGroupResource
 
 
 @cherrypy.popargs('acctgroup')

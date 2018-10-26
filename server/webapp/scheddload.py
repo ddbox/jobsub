@@ -13,14 +13,13 @@
 
 """
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
 import sys
-from condor_commands import ui_condor_status_totalrunningjobs
 import socket
 import os
-
-from format import format_response
+from jobsub.lib.logger import logger
+from .condor_commands import ui_condor_status_totalrunningjobs
+from .format import format_response
 
 
 @cherrypy.popargs('acctgroup')

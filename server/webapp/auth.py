@@ -22,15 +22,15 @@ import cherrypy
 from jobsub.lib.logger import logger
 import logging
 import jmod
-import subprocessSupport
-import authutils
 import pwd
-
 from functools import wraps, partial
 from distutils import spawn
+
 from jobsub.lib.parser import JobsubConfigParser
-from request_headers import get_client_dn
-from request_headers import uid_from_client_dn
+from .request_headers import get_client_dn
+from .request_headers import uid_from_client_dn
+from . import subprocessSupport
+from . import authutils
 
 
 def authenticate(dn, acctgroup, acctrole):

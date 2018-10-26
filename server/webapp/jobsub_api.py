@@ -14,18 +14,17 @@ import os
 import getpass
 import traceback
 from distutils import spawn
-
-from accounting_group import AccountingGroupsResource
-from queued_jobs import QueuedJobsResource
-from users_jobs import UsersJobsResource
-from version import VersionResource
-from scheddload import ScheddLoadResource
-from util import mkdir_p
-from subprocessSupport import iexe_priv_cmd
 from threading import current_thread
-from format import format_response
 from jobsub.lib.parser import JobsubConfigParser
-import jmod
+import jobsub.server.webapp.jmod as jmod
+from jobsub.server.webapp.accounting_group import AccountingGroupsResource
+from jobsub.server.webapp.queued_jobs import QueuedJobsResource
+from jobsub.server.webapp.users_jobs import UsersJobsResource
+from jobsub.server.webapp.version import VersionResource
+from jobsub.server.webapp.scheddload import ScheddLoadResource
+from jobsub.server.webapp.util import mkdir_p
+from jobsub.server.webapp.subprocessSupport import iexe_priv_cmd
+from jobsub.server.webapp.format import format_response
 
 
 class ApplicationInitializationError(Exception):

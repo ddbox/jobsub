@@ -21,8 +21,8 @@ import re
 from random import randint
 
 from jobsub.lib.parser import JobsubConfigParser
-import subprocessSupport
-from request_headers import get_client_dn
+from . import subprocessSupport
+from .request_headers import get_client_dn
 
 if os.getenv('JOBSUB_USE_FAKE_LOGGER'):
     import jobsub.lib.logger.FakeLogger as logger

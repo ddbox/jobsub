@@ -7,13 +7,13 @@
             Dennis Box
 """
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
 import util
 
-from auth import check_auth
-from jmod  import is_supported_accountinggroup
-from format import format_response
+from jobsub.lib.logger import logger
+from .auth import check_auth
+from .jmod  import is_supported_accountinggroup
+from .format import format_response
 
 
 @cherrypy.popargs('job_id')

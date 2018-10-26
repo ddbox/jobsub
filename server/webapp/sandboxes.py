@@ -10,23 +10,24 @@
 
 """
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
 import os
 import time
 import socket
 import sys
-import subprocessSupport
-from auth import check_auth
-from request_headers import get_client_dn
-from request_headers import uid_from_client_dn
-from jmod import get_command_path_root
-from jmod import sandbox_readable_by_group
-from jmod import sandbox_allowed_browsable_file_types
-from jmod import is_superuser_for_group
-from jmod import is_global_superuser
-from sandbox import make_sandbox_readable
-from format import format_response, rel_link
+from jobsub.lib.logger import logger
+from . import subprocessSupport
+from .auth import check_auth
+from .request_headers import get_client_dn
+from .request_headers import uid_from_client_dn
+from .jmod import get_command_path_root
+from .jmod import sandbox_readable_by_group
+from .jmod import sandbox_allowed_browsable_file_types
+from .jmod import is_superuser_for_group
+from .jmod import is_global_superuser
+from .sandbox import make_sandbox_readable
+from .format import format_response
+from .format import rel_link
 
 
 @cherrypy.popargs('user_id', 'job_id', 'file_id')

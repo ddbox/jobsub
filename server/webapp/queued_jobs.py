@@ -4,17 +4,17 @@ Purpose: performs condor_q for jobsub server
 Author: Nick Palumbo
 """
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
+from jobsub.lib.logger import logger
 
-from request_headers import get_client_dn
-from format import format_response
-from condor_commands import ui_condor_q, constructFilter
-from history import HistoryResource
-from summary import JobSummaryResource
-from jobid import QueuedJobsByJobIDResource
-from queued_outformat import QueuedFormattedOutputResource
-from queued_jobstatus import QueuedJobStatusResource
+from .request_headers import get_client_dn
+from .format import format_response
+from .condor_commands import ui_condor_q, constructFilter
+from .history import HistoryResource
+from .summary import JobSummaryResource
+from .jobid import QueuedJobsByJobIDResource
+from .queued_outformat import QueuedFormattedOutputResource
+from .queued_jobstatus import QueuedJobStatusResource
 
 
 @cherrypy.popargs('user_id')

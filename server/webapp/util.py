@@ -1,3 +1,4 @@
+#from __future__ import absolute_import
 """
  Description:
    This module contains various utility functions for html encoding
@@ -12,7 +13,8 @@
 
 
 """
-from jobsub.lib.logger import logger
+import re
+import cherrypy
 import logging
 import os
 import errno
@@ -25,14 +27,19 @@ import json
 import hashlib
 import StringIO
 import pwd
-import jmod
-import condor_commands
-import re
-import cherrypy
-import authutils
 import socket
-import request_headers
+from jobsub.lib.logger import logger
 
+#when absolute_import enforced need this
+#import jobsub.server.webapp.jmod as jmod
+#import jobsub.server.webapp.condor_commands as condor_commands
+#import jobsub.server.webapp.authutils as authutils
+#import jobsub.server.webapp.request_headers as request_headers
+#bug for now this works
+from . import jmod
+from . import condor_commands
+from . import authutils
+from . import request_headers
 
 def encode_multipart_formdata(fields, files, outfile):
     """

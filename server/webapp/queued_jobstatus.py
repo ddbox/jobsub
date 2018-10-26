@@ -14,13 +14,15 @@
 
 """
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
 import sys
-import request_headers
 
-from condor_commands import ui_condor_q, constructFilter
-from format import format_response
+from jobsub.lib.logger import logger
+
+from . import request_headers
+from .condor_commands import ui_condor_q
+from .condor_commands import constructFilter
+from .format import format_response
 
 
 class QueuedJobStatusResource(object):

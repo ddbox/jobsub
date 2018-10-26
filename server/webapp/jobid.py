@@ -6,16 +6,17 @@
         Dennis Box
 """
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
 
-from format import format_response
-from condor_commands import ui_condor_q
-from condor_commands import constructFilter
-from queued_outformat import QueuedFormattedOutputResource
-from queued_jobstatus import QueuedJobStatusResource
-from better_analyze import BetterAnalyzeResource
-from request_headers import get_client_dn
+from jobsub.lib.logger import logger
+
+from .format import format_response
+from .condor_commands import ui_condor_q
+from .condor_commands import constructFilter
+from .queued_outformat import QueuedFormattedOutputResource
+from .queued_jobstatus import QueuedJobStatusResource
+from .better_analyze import BetterAnalyzeResource
+from .request_headers import get_client_dn
 
 
 @cherrypy.popargs('job_id')

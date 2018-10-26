@@ -8,22 +8,24 @@
             Nick Palumbo
 """
 import cherrypy
-from jobsub.lib.logger import logger
+from cherrypy.lib.static import serve_file
 import logging
 import uuid
 import os
 import sys
 import socket
-from auth import check_auth
-from request_headers import get_client_dn
-from format import format_response
-from jmod import get_dropbox_path_root
-from util import mkdir_p
-from util import digest_for_file
+from shutil import copyfileobj
+from shutil import rmtree
 
-from cherrypy.lib.static import serve_file
+from jobsub.lib.logger import logger
+from .auth import check_auth
+from .request_headers import get_client_dn
+from .format import format_response
+from .jmod import get_dropbox_path_root
+from .util import mkdir_p
+from .util import digest_for_file
 
-from shutil import copyfileobj, rmtree
+
 
 
 @cherrypy.popargs('box_id', 'filename')

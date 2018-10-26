@@ -21,21 +21,21 @@ import re
 import time
 import traceback
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
-import jmod
-import subprocessSupport
 import pwd
 import hashlib
 import json
 import pycurl
 import cStringIO
-
-
 from distutils import spawn
 from tempfile import NamedTemporaryFile
+
+from jobsub.lib.logger import logger
 from jobsub.lib.parser import JobsubConfigParser
-from request_headers import get_client_dn
+
+from . import jmod
+from . import subprocessSupport
+from .request_headers import get_client_dn
 
 
 class AuthenticationError(Exception):

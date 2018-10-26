@@ -14,9 +14,9 @@ from jobsub.lib.logger import logger
 import logging
 import sys
 
-from format import format_response, rel_link
-#from condor_commands import ui_condor_q, constructFilter, condor_userprio
-import condor_commands
+from .format import format_response
+from .format import rel_link
+from . import condor_commands
 
 
 class UsersJobsResource(object):

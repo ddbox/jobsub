@@ -9,13 +9,13 @@
         Dennis Box
 """
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
 import sys
 
-from request_headers import get_client_dn
-from format import format_response
-from jmod import execute_job_submit_wrapper
+from jobsub.lib.logger import logger
+from .request_headers import get_client_dn
+from .format import format_response
+from .jmod import execute_job_submit_wrapper
 
 
 class DAGHelpResource(object):

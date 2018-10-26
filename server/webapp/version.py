@@ -14,7 +14,7 @@ import sys
 import os
 import logging
 from jobsub.lib.logger import logger
-from format import format_response
+from .format import format_response
 
 
 class VersionResource(object):

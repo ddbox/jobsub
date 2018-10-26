@@ -15,24 +15,25 @@
 """
 import os
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
 import re
 import time
 
 from cherrypy.lib.static import serve_file
 
-from util import create_zipfile
-from util import create_tarfile
-from auth import check_auth
-import jmod
-from format import format_response
+from jobsub.lib.logger import logger
 from jobsub.lib.parser import JobsubConfigParser
-from condor_commands import constructFilter
-from condor_commands import iwd_condor_q
-from sqlite_commands import constructQuery
-from sqlite_commands import iwd_jobsub_history
-from request_headers import uid_from_client_dn
+
+from . import jmod
+from .util import create_zipfile
+from .util import create_tarfile
+from .auth import check_auth
+from .format import format_response
+from .condor_commands import constructFilter
+from .condor_commands import iwd_condor_q
+from .sqlite_commands import constructQuery
+from .sqlite_commands import iwd_jobsub_history
+from .request_headers import uid_from_client_dn
 
 
 def cleanup(zip_file, outfilename=None):

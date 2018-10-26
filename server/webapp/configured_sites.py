@@ -11,15 +11,15 @@
 
 """
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
 import socket
 import sys
-import subprocessSupport
+from jobsub.lib.logger import logger
 from jobsub.lib.parser import JobsubConfigParser
-from jmod import is_supported_accountinggroup
-from format import format_response
-from request_headers import get_client_dn
+from . import subprocessSupport
+from .jmod import is_supported_accountinggroup
+from .format import format_response
+from .request_headers import get_client_dn
 
 
 @cherrypy.popargs('user_id')

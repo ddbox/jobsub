@@ -10,12 +10,11 @@
 
 """
 import cherrypy
-from jobsub.lib.logger import logger
 import logging
 import sys
-from condor_commands import ui_condor_queued_jobs_summary
-
-from format import format_response
+from jobsub.lib.logger import logger
+from .condor_commands import ui_condor_queued_jobs_summary
+from .format import format_response
 
 
 class JobSummaryResource(object):
