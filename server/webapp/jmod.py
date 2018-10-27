@@ -393,7 +393,7 @@ def get_jobsub_wrapper(submit_type='job'):
        depending on
        @submit_type = 'job' or 'dag'
     """
-    exepath = '/opt/jobsub/server/webapp'
+    exepath = os.environ.get('JOBSUB_LIBEXEC', '/usr/local/libexc/jobsub')
     wrapper = os.environ.get('JOBSUB_ENV_RUNNER',
                              os.path.join(exepath,
                                           'jobsub_env_runner.sh'))
@@ -486,6 +486,7 @@ def execute_job_submit_wrapper(acctgroup, username, jobsub_args,
         child_env['JOBSUB_CLIENT_DN'] = get_client_dn()
         rm_ip = cherrypy.request.headers.get('Remote-Addr')
         child_env['JOBSUB_CLIENT_IP_ADDRESS'] = rm_ip
+    	child_env['PYTHONPATH'] = os.environ.get('JOBSUB_PYLIB')
 
         if '--sendtkt' in jobsub_args and should_transfer_krb5cc(acctgroup):
             src_cache_fname = os.path.join(jobsubConfig.krb5cc_dir,
@@ -602,7 +603,7 @@ def get_jobsub_priv_exe():
        as a given user
     """
     # TODO: Need to find a proper library for this call
-    path = '%s:%s:%s' % (os.environ['PATH'], '.', '/opt/jobsub/server/webapp')
+    path = '%s:%s:%s' % (os.environ['PATH'], '.', os.environ['JOBSUB_LIBEXEC'])
     exe = spawn.find_executable('jobsub_priv', path=path)
     if not exe:
         raise Exception("Unable to find command '%s' in the PATH." % exe)
@@ -670,6 +671,8 @@ def run_cmd_as_user(command, username, child_env={}):
     cmd = '%s runCommand %s' % (exe, c)
     out = err = ''
     logger.log(cmd)
+    logger.log('for fucks sake')
+    logger.log(os.environ)
     try:
         out, err = subprocessSupport.iexe_priv_cmd(cmd, child_env=child_env,
                                                    username=username)

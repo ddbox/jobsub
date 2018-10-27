@@ -661,7 +661,6 @@ def clean_proxy_dn(dn):
 def x509_proxy_fname(username, acctgroup, acctrole=None, dn=None):
     """generate file name to store x509 proxy
     """
-    #creds_base_dir = os.environ.get('JOBSUB_CREDENTIALS_DIR')
     jobsubConfig = jmod.JobsubConfig()
     proxies_base_dir = jobsubConfig.proxies_dir
     creds_dir = os.path.join(proxies_base_dir, acctgroup)

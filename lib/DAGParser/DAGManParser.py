@@ -42,7 +42,7 @@ for i in status_strings.keys():
 #         release- {date,time,utime}
 #         suspend- {date,time,utime}
 # sections - dictionary of (section_name,jid)
-class DAGManLogParser:
+class DAGManLogParser(object):
 
     def parseSubmit(self, jid, datetime, other, block, ignore_sections):
         if not ignore_sections:
@@ -75,8 +75,7 @@ class DAGManLogParser:
             #exeport = int(exeurllist[1][:-1])
             m = re.match("(\d+)", exeurllist[1])
             exeport = m.group(1)
-        except:
-            # Protect just in case
+        except Exception:            # Protect just in case
             exehost = "unknown"
             exeport = -1
         datetime["node"] = exehost
@@ -321,7 +320,7 @@ class DAGManLogParser:
             if long == 2:
                 print "jid=%s el=%s el[keys]=%s" % (jid, el, el.keys())
             cur = status_strings[el["current"]]
-            if cur == "Completed" and "end" in el and "retcode" in el["end"] :
+            if cur == "Completed" and "end" in el and "retcode" in el["end"]:
                 cur = cur + " Exit Code:%s" % el["end"]["retcode"]
             print "JobsubJobID: %s.0@%s %s DAGNodeName: %s" % (jid, socket.gethostname(), cur, el["section"])
             if long:
@@ -371,7 +370,7 @@ class DAGManLogParser:
 #                   each element count how many times it went throug that state
 
 
-class DAGManLogParserFast:
+class DAGManLogParserFast(object):
 
     def parseFile(self, fd, want_counters, alive_only):
         changed = 0
@@ -387,8 +386,8 @@ class DAGManLogParserFast:
             try:
                 optype = int(line[0:3])
                 jid = int(string.split(line[5:15], '.', 1)[0])
-            except:
-                # in case of error, just skip (optype=-1)
+            # in case of error, just skip (optype=-1)
+            except Exception:
                 optype = -1
                 jid = 0
             new_state = None
@@ -513,7 +512,7 @@ class DAGManLogParserFast:
 
 ###########################################################################
 # these ones will work on line by line basis
-class LineIO:
+class LineIO(object):
 
     def __init__(self, filename, default_fields):
         self.filename = filename
@@ -532,7 +531,7 @@ class LineIO:
     def tell(self):
         return self.fd.tell()
 
-    #def tell_line(self):
+    # def tell_line(self):
     #    return self.first_line + len(self.cached_lines)
 
     def readline(self):

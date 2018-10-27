@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 # $Id$
-import os
-import sys
 import subprocess
 
 
@@ -80,7 +78,7 @@ fi
         return ks
 
     def logTruncateString(self):
-        lts = """
+        lts = r"""
 set_jobsub_debug(){
     export PS4='$LINENO:'
     set -xv

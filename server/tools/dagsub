@@ -7,8 +7,8 @@ import commands
 import re
 import datetime
 import time
-from jobsub.lib.parser import JobsubConfigParser
 import xml.etree.ElementTree as ET
+from jobsub.lib.parser import JobsubConfigParser
 
 docString = """
  $Id$

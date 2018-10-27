@@ -126,12 +126,14 @@ def initialize(log):
 def application(environ, start_response):
     os.environ['JOBSUB_INI_FILE'] = environ['JOBSUB_INI_FILE']
     os.environ['JOBSUB_ENV_RUNNER'] = environ['JOBSUB_ENV_RUNNER']
-    os.environ['JOBSUB_UPS_LOCATION'] = environ['JOBSUB_UPS_LOCATION']
     os.environ['JOBSUB_CREDENTIALS_DIR'] = \
         os.path.expanduser(environ['JOBSUB_CREDENTIALS_DIR'])
-    os.environ['KCA_DN_PATTERN_LIST'] = environ['KCA_DN_PATTERN_LIST']
-    os.environ['KADMIN_PASSWD_FILE'] = \
-        os.path.expanduser(environ['KADMIN_PASSWD_FILE'])
+
+    os.environ['JOBSUB_LIBEXEC'] = environ['JOBSUB_LIBEXEC']
+    os.environ['JOBSUB_PYLIB'] = environ['JOBSUB_PYLIB']
+    os.environ['PYTHONPATH'] = os.environ['JOBSUB_PYLIB']
+    os.environ['JOBSUB_VARLIB'] = environ['JOBSUB_VARLIB']
+
     os.environ['JOBSUB_SERVER_VERSION'] = "1.2.9.0.1.rc0"
     os.environ['JOBSUB_SERVER_X509_CERT'] = environ['JOBSUB_SERVER_X509_CERT']
     os.environ['JOBSUB_SERVER_X509_KEY'] = environ['JOBSUB_SERVER_X509_KEY']
