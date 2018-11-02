@@ -4,7 +4,7 @@ import os
 import sys
 import datetime
 import re
-from JobUtils import JobUtils
+from .JobUtils import JobUtils
 from optparse import OptionParser
 from optparse import OptionGroup
 from optparse import SUPPRESS_HELP

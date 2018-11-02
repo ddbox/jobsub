@@ -25,7 +25,7 @@ function is_vm_up() {
     local retries=0
     echo "Waiting for $fqdn to boot up "
     while [ $retries -lt 30 ] ; do
-        tmpout=`ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no root@$fqdn hostname 2>/dev/null`
+        tmpout=`timeout 6 ssh -o StrictHostKeyChecking=no root@$fqdn hostname 2>/dev/null`
         if [ "$tmpout" != "$fqdn" ] ; then
             echo -n "."
             sleep 30
@@ -46,15 +46,6 @@ function usage() {
 }
 
 
-function read_arg_value() {
-    default="$1"
-    value="$2"
-    if [ -z "$value" ] ; then
-        echo "$value"
-    else
-        echo "$default"
-    fi
-}
 
 
 function help() {
@@ -135,9 +126,11 @@ is_vm_up $fqdn
 
 echo "VM Information"
 echo "-------------------"
-echo "vm name     : $vm_name"
+echo "vm_name     : $vm_name"
 echo "vm_template : $vm_template"
 echo "vmid   : $vmid"
 echo "fqdn   : $fqdn"
 echo "dn     : $vm_dn"
 echo "status      : $fqdn_status"
+echo
+echo $fqdn

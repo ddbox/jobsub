@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # $Id$
 
-import unittest
+import unittest2 as unittest
 import sys
 import os
 import commands
@@ -68,13 +68,17 @@ class JobTest(unittest.TestCase):
         ok = len(self.currentResult.errors) == 0 and len(self.currentResult.failures) == 0
         self.stdioON()
         if len(errors) > 0  or len (failures) > 0:
-                print """test failed, output saved to %s"""%self.tmpdir
+                print """\ntest failed, output saved to %s"""%self.tmpdir
                 print """ errors: %s """ % errors
                 print """ failures: %s """ % failures
         else:
                 #print "test ok, removing %s"%self.tmpdir
                 import shutil
                 shutil.rmtree(self.tmpdir)
+        del self.currentResult.errors
+        del self.currentResult.failures
+        self.currentResult.errors = []
+        self.currentResult.failures = []
 
     def testConstructor(self):
         """test that JobSettings constructor initializes correctly"""
@@ -459,4 +463,5 @@ if __name__ == "__main__":
     
     #unittest.main()
     suite = unittest.makeSuite(JobTest)
-    unittest.TextTestRunner(verbosity=10).run(suite)
+    #unittest.TextTestRunner(verbosity=10).run(suite)
+    unittest.TextTestRunner().run(suite)
